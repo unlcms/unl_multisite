@@ -34,14 +34,14 @@ function unl_multisite_block_view($delta = '') {
  * Displays the list of sites/roles for the current user.
  */
 function unl_multisite_block_view_my_sites() {
-  if (user_is_anonymous()) {
+  if (\Drupal::currentUser()->isAnonymous()) {
     return array();
   }
 
   require_once 'unl_site_creation.php';
 
   $block = array();
-  $block['content'] = _unl_get_user_audit_content($GLOBALS['user']->name);
+  $block['content'] = _unl_get_user_audit_content(\Drupal::currentUser()->name);
 
   return $block;
 }

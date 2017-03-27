@@ -4,15 +4,15 @@
  * admin/sites/unl as specified in unl_multisite_menu().
  */
 
-require_once DRUPAL_ROOT . '/includes/install.core.inc';
+require_once \Drupal::root() . '/includes/install.core.inc';
 
 /**
  * Page callback for admin/sites/unl
  */
 function unl_sites_page() {
   $page = array();
-  $page[] = drupal_get_form('unl_site_list');
-  $page[] = drupal_get_form('unl_site_updates');
+  $page[] = \Drupal::formBuilder()->getForm('unl_site_list');
+  $page[] = \Drupal::formBuilder()->getForm('unl_site_updates');
   return $page;
 }
 
@@ -119,7 +119,10 @@ function unl_site_create_submit($form, &$form_state) {
     $site_path[$i] = unl_sanitize_url_part($site_path[$i]);
   }
   $site_path = implode('/', $site_path);
-  $uri = url($site_path, array('absolute' => TRUE, 'https' => FALSE));
+  // @FIXME
+// url() expects a route name or an external URI.
+// $uri = url($site_path, array('absolute' => TRUE, 'https' => FALSE));
+
 
   $clean_url = intval($clean_url);
 
@@ -180,33 +183,42 @@ function unl_site_list($form, &$form_state) {
 
   $rows = array();
   foreach ($sites as $site) {
-    $rows[$site->site_id] = array(
-      'uri' => theme('unl_site_details', array('site_path' => $site->site_path, 'uri' => $site->uri, 'db_prefix' => $site->db_prefix)),
-      'name' => (isset($site->name) ? $site->name : ''),
-      'access' => (isset($site->access) ? $site->access : 0),
-      'installed' => _unl_get_install_status_text($site->installed),
-      'operations' => array(
-        'data' => array(
-          '#theme' => 'links__node_operations',
-          '#links' => array(
-            'aliases' => array(
-              'title' => t('edit aliases'),
-              'href' => 'admin/sites/unl/' . $site->site_id . '/aliases',
-            ),
-            'edit' => array(
-              'title' => t('edit site'),
-              'href' => 'admin/sites/unl/' . $site->site_id . '/edit',
-            ),
-            'delete' => array(
-              'title' => t('delete site'),
-              'href' => 'admin/sites/unl/' . $site->site_id . '/delete',
-              'query' => drupal_get_destination(),
-            ),
-          ),
-          '#attributes' => array('class' => array('links', 'inline')),
-        ),
-      ),
-    );
+    // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $rows[$site->site_id] = array(
+//       'uri' => theme('unl_site_details', array('site_path' => $site->site_path, 'uri' => $site->uri, 'db_prefix' => $site->db_prefix)),
+//       'name' => (isset($site->name) ? $site->name : ''),
+//       'access' => (isset($site->access) ? $site->access : 0),
+//       'installed' => _unl_get_install_status_text($site->installed),
+//       'operations' => array(
+//         'data' => array(
+//           '#theme' => 'links__node_operations',
+//           '#links' => array(
+//             'aliases' => array(
+//               'title' => t('edit aliases'),
+//               'href' => 'admin/sites/unl/' . $site->site_id . '/aliases',
+//             ),
+//             'edit' => array(
+//               'title' => t('edit site'),
+//               'href' => 'admin/sites/unl/' . $site->site_id . '/edit',
+//             ),
+//             'delete' => array(
+//               'title' => t('delete site'),
+//               'href' => 'admin/sites/unl/' . $site->site_id . '/delete',
+//               'query' => drupal_get_destination(),
+//             ),
+//           ),
+//           '#attributes' => array('class' => array('links', 'inline')),
+//         ),
+//       ),
+//     );
+
   }
 
   // Sort the table data accordingly with a custom sort function
@@ -216,7 +228,7 @@ function unl_site_list($form, &$form_state) {
 
   // Now that the access timestamp has been used to sort, convert it to something readable
   foreach ($rows as $key=>$row) {
-    $rows[$key]['access'] = (isset($row['access']) && $row['access'] > 0) ? t('@time ago', array('@time' => format_interval(REQUEST_TIME - $row['access']))) : t('never');
+    $rows[$key]['access'] = (isset($row['access']) && $row['access'] > 0) ? t('@time ago', array('@time' => \Drupal::service("date.formatter")->formatInterval(REQUEST_TIME - $row['access']))) : t('never');
   }
 
   $form['unl_sites']['site_list'] = array(
@@ -236,8 +248,13 @@ function unl_site_list($form, &$form_state) {
 function unl_add_extra_site_info($sites) {
   // Get all custom made roles (roles other than authenticated, anonymous, administrator)
   $roles = user_roles(TRUE);
-  unset($roles[DRUPAL_AUTHENTICATED_RID]);
-  unset($roles[variable_get('user_admin_role')]);
+  unset($roles[\Drupal\Core\Session\AccountInterface::AUTHENTICATED_RID]);
+  // @FIXME
+// // @FIXME
+// // This looks like another module's variable. You'll need to rewrite this call
+// // to ensure that it uses the correct configuration object.
+// unset($roles[variable_get('user_admin_role')]);
+
 
   // Setup alternate db connection so we can query other sites' tables without a prefix being attached
   $database_noprefix = array(
@@ -456,12 +473,15 @@ function unl_site_edit_submit($form, &$form_state) {
     ->execute();
 
   // Add an alias to the new site_path. This new path and the current default path in unl_sites will be exchanged with one another in cron.
-  db_insert('unl_sites_aliases')->fields(array(
-    'site_id' => $site_id,
-    'base_uri' => url('', array('absolute' => TRUE, 'https' => FALSE)),
-    'path' => $site_path,
-    'installed' => 6,
-  ))->execute();
+  // @FIXME
+// url() expects a route name or an external URI.
+// db_insert('unl_sites_aliases')->fields(array(
+//     'site_id' => $site_id,
+//     'base_uri' => url('', array('absolute' => TRUE, 'https' => FALSE)),
+//     'path' => $site_path,
+//     'installed' => 6,
+//   ))->execute();
+
 
   drupal_set_message("{$old_site_path} has been scheduled to change to {$site_path}");
   $form_state['redirect'] = 'admin/sites/unl';
@@ -527,16 +547,16 @@ function unl_site_remove($site_id) {
   $uri = $uri[0];
 
   $sites_subdir = unl_get_sites_subdir($uri);
-  $sites_subdir = DRUPAL_ROOT . '/sites/' . $sites_subdir;
+  $sites_subdir = \Drupal::root() . '/sites/' . $sites_subdir;
   $sites_subdir = realpath($sites_subdir);
 
   // A couple checks to make sure we aren't deleting something we shouldn't be.
-  if (substr($sites_subdir, 0, strlen(DRUPAL_ROOT . '/sites/')) != DRUPAL_ROOT . '/sites/') {
+  if (substr($sites_subdir, 0, strlen(\Drupal::root() . '/sites/')) != \Drupal::root() . '/sites/') {
     form_set_error(NULL, t('The site could not be removed.'));
     return;
   }
 
-  if (strlen($sites_subdir) <= strlen(DRUPAL_ROOT . '/sites/')) {
+  if (strlen($sites_subdir) <= strlen(\Drupal::root() . '/sites/')) {
     form_set_error(NULL, t('The site could not be removed.'));
     return;
   }
@@ -588,14 +608,14 @@ function unl_site_updates_submit($form, &$form_state) {
 
   $batch = array(
     'operations' => $operations,
-    'file' => substr(__FILE__, strlen(DRUPAL_ROOT) + 1),
+    'file' => substr(__FILE__, strlen(\Drupal::root()) + 1),
   );
   batch_set($batch);
 }
 
 function unl_site_updates_step($site_uri, &$context) {
   $uri = escapeshellarg($site_uri);
-  $root = escapeshellarg(DRUPAL_ROOT);
+  $root = escapeshellarg(\Drupal::root());
   $output = '';
   $command = "sites/all/modules/drush/drush.php -y --token=secret --root={$root} --uri={$uri} updatedb 2>&1";
   $output .= shell_exec($command);
@@ -612,14 +632,14 @@ function unl_aliases_page($site_id = null) {
   $page = array();
 
   if (isset($site_id)) {
-    $page[] = drupal_get_form('unl_site_alias_create', $site_id);
-    $page[] = drupal_get_form('unl_site_alias_list', $site_id);
+    $page[] = \Drupal::formBuilder()->getForm('unl_site_alias_create', $site_id);
+    $page[] = \Drupal::formBuilder()->getForm('unl_site_alias_list', $site_id);
   }
   else {
-    $page[] = drupal_get_form('unl_site_alias_create');
-    $page[] = drupal_get_form('unl_site_alias_list');
-    $page[] = drupal_get_form('unl_page_alias_create');
-    $page[] = drupal_get_form('unl_page_alias_list');
+    $page[] = \Drupal::formBuilder()->getForm('unl_site_alias_create');
+    $page[] = \Drupal::formBuilder()->getForm('unl_site_alias_list');
+    $page[] = \Drupal::formBuilder()->getForm('unl_page_alias_create');
+    $page[] = \Drupal::formBuilder()->getForm('unl_page_alias_list');
   }
 
   return $page;
@@ -653,13 +673,16 @@ function unl_site_alias_create($form, &$form_state, $site_id = null) {
     '#default_value' => (isset($site_id) ? $site_id : FALSE),
     '#disabled' => (isset($site_id) ? TRUE : FALSE),
   );
-  $form['root']['base_uri'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Alias base URL'),
-    '#description' => t('The base URL for the new alias. This should resolve to the directory containing the .htaccess file.'),
-    '#default_value' => url('', array('https' => FALSE)),
-    '#required' => TRUE,
-  );
+  // @FIXME
+// url() expects a route name or an external URI.
+// $form['root']['base_uri'] = array(
+//     '#type' => 'textfield',
+//     '#title' => t('Alias base URL'),
+//     '#description' => t('The base URL for the new alias. This should resolve to the directory containing the .htaccess file.'),
+//     '#default_value' => url('', array('https' => FALSE)),
+//     '#required' => TRUE,
+//   );
+
   $form['root']['path'] = array(
     '#type' => 'textfield',
     '#title' => t('Path'),
@@ -832,20 +855,26 @@ function unl_page_alias_create($form, &$form_state) {
     '#type' => 'fieldset',
     '#title' => 'Create new page alias',
   );
-  $form['root']['from_uri'] = array(
-    '#type' => 'textfield',
-    '#title' => t('From URI'),
-    '#description' => t('The URI that users will visit.'),
-    '#default_value' => url('from/uri', array('https' => FALSE)),
-    '#required' => TRUE,
-  );
-  $form['root']['to_uri'] = array(
-    '#type' => 'textfield',
-    '#title' => t('To URI'),
-    '#description' => t('The URI users will be redirected to.'),
-    '#default_value' => url('to/uri', array('https' => FALSE)),
-    '#required' => TRUE,
-  );
+  // @FIXME
+// url() expects a route name or an external URI.
+// $form['root']['from_uri'] = array(
+//     '#type' => 'textfield',
+//     '#title' => t('From URI'),
+//     '#description' => t('The URI that users will visit.'),
+//     '#default_value' => url('from/uri', array('https' => FALSE)),
+//     '#required' => TRUE,
+//   );
+
+  // @FIXME
+// url() expects a route name or an external URI.
+// $form['root']['to_uri'] = array(
+//     '#type' => 'textfield',
+//     '#title' => t('To URI'),
+//     '#description' => t('The URI users will be redirected to.'),
+//     '#default_value' => url('to/uri', array('https' => FALSE)),
+//     '#required' => TRUE,
+//   );
+
   $form['root']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Create alias'),
@@ -862,7 +891,10 @@ function unl_page_alias_create_validate($form, &$form_state) {
 
   $from = $form_state['values']['from_uri'];
   $to = $form_state['values']['to_uri'];
-  $root = url('', array('absolute' => TRUE));
+  // @FIXME
+// url() expects a route name or an external URI.
+// $root = url('', array('absolute' => TRUE));
+
 
   if (parse_url($from, PHP_URL_HOST)  == parse_url($to, PHP_URL_HOST) &&
       parse_url($from, PHP_URL_PATH)  == parse_url($to, PHP_URL_PATH) &&
@@ -1038,21 +1070,24 @@ function unl_user_audit($form, &$form_state) {
  * @param string $username
  */
 function _unl_get_user_audit_content($username) {
-  if (user_is_anonymous()) {
+  if (\Drupal::currentUser()->isAnonymous()) {
     return array();
   }
 
   $audit_map = array();
 
   foreach (unl_get_site_user_map('username', $username) as $site_id => $site) {
-    $audit_map[$site_id] = array(
-      'uri' => l($site['uri'], $site['uri']),
-      'roles' => '',
-      'last_update' => $site['last_update'],
-    );
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $audit_map[$site_id] = array(
+//       'uri' => l($site['uri'], $site['uri']),
+//       'roles' => '',
+//       'last_update' => $site['last_update'],
+//     );
+
     foreach ($site['roles'] as $role => $user) {
       $audit_map[$site_id]['roles'] .= "$role ";
-      $audit_map[$site_id]['roles'] .= ($GLOBALS['user']->name != $username ? "($user)" : '');
+      $audit_map[$site_id]['roles'] .= (\Drupal::currentUser()->name != $username ? "($user)" : '');
       $audit_map[$site_id]['roles'] .= "<br />";
     }
   }
@@ -1064,7 +1099,7 @@ function _unl_get_user_audit_content($username) {
         'field' => 'uri',
       ),
       'role' => array(
-        'data' => t('Role') . ($GLOBALS['user']->name != $username ? ' (' . t('User') . ')' : ''),
+        'data' => t('Role') . (\Drupal::currentUser()->name != $username ? ' (' . t('User') . ')' : ''),
       ),
       'last_update' => array(
         'data' => t('Last Updated'),
@@ -1087,7 +1122,7 @@ function _unl_get_user_audit_content($username) {
       '#header' => $header,
       '#rows' => $rows,
     );
-    if ($username == $GLOBALS['user']->name) {
+    if ($username == \Drupal::currentUser()->name) {
       $content['#caption'] = t('You belong to the following sites as a member of the listed roles.');
     }
     else {
@@ -1098,7 +1133,7 @@ function _unl_get_user_audit_content($username) {
     $content = array(
       '#type' => 'item',
     );
-    if ($username == $GLOBALS['user']->name) {
+    if ($username == \Drupal::currentUser()->name) {
       $content['#title'] = t('You do not belong to any roles on any sites.');
     }
     else {
@@ -1124,12 +1159,21 @@ function unl_user_audit_submit($form, &$form_state) {
  */
 function theme_unl_table($variables) {
   $form = $variables['form'];
-  foreach (element_children($form['rows']) as $row_index) {
-    foreach (element_children($form['rows'][$row_index]) as $column_index) {
-      $form['#rows'][$row_index][$column_index] = drupal_render($form['rows'][$row_index][$column_index]);
+  foreach (\Drupal\Core\Render\Element::children($form['rows']) as $row_index) {
+    foreach (\Drupal\Core\Render\Element::children($form['rows'][$row_index]) as $column_index) {
+      $form['#rows'][$row_index][$column_index] = \Drupal::service("renderer")->render($form['rows'][$row_index][$column_index]);
     }
   }
-  return theme('table', $form);
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// return theme('table', $form);
+
 }
 
 /**
@@ -1232,7 +1276,7 @@ function unl_get_site_user_map($search_by, $username_or_role, $list_empty_sites 
       );
     } catch (Exception $e) {
       // Either the site has no settings.php or the db_prefix is wrong.
-      watchdog('unl_multisite', 'Error querying database for site %uri', array('%uri' => $site->uri), WATCHDOG_WARNING);
+      \Drupal::logger('unl_multisite')->warning('Error querying database for site %uri', array('%uri' => $site->uri));
     }
   }
 

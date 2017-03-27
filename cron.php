@@ -16,9 +16,9 @@ if (PHP_SAPI != 'cli') {
 }
 
 chdir(dirname(__FILE__) . '/../../../..');
-define('DRUPAL_ROOT', getcwd());
+define('\Drupal::root()', getcwd());
 
-require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
+require_once \Drupal::root() . '/includes/bootstrap.inc';
 drupal_override_server_variables();
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
 require_once drupal_get_path('module', 'unl') . '/includes/common.php';
@@ -46,7 +46,7 @@ function unl_add_sites() {
         ->condition('site_id', $row['site_id'])
         ->execute();
     } catch (Exception $e) {
-      watchdog('unl cron', $e->getMessage(), array(), WATCHDOG_ERROR);
+      \Drupal::logger('unl cron')->error($e->getMessage(), array());
       db_update('unl_sites')
         ->fields(array('installed' => 5))
         ->condition('site_id', $row['site_id'])
@@ -68,7 +68,7 @@ function unl_remove_sites() {
         ->condition('site_id', $row['site_id'])
         ->execute();
     } catch (Exception $e) {
-      watchdog('unl cron', $e->getMessage(), array(), WATCHDOG_ERROR);
+      \Drupal::logger('unl cron')->error($e->getMessage(), array());
       db_update('unl_sites')
         ->fields(array('installed' => 5))
         ->condition('site_id', $row['site_id'])
@@ -105,11 +105,11 @@ function unl_edit_sites() {
 
       // Original sites subdir
       $sites_subdir = unl_get_sites_subdir($row['uri']);
-      $sites_subdir = DRUPAL_ROOT . '/sites/' . $sites_subdir;
+      $sites_subdir = \Drupal::root() . '/sites/' . $sites_subdir;
       $sites_subdir = realpath($sites_subdir);
       // New sites subdir
       $new_sites_subdir = unl_get_sites_subdir(strtolower($new_uri));
-      $new_sites_subdir = DRUPAL_ROOT . '/sites/' . $new_sites_subdir;
+      $new_sites_subdir = \Drupal::root() . '/sites/' . $new_sites_subdir;
       // mv original to new
       shell_exec('chmod -R u+w ' . escapeshellarg($sites_subdir));
       $command = 'mv ' . escapeshellarg($sites_subdir) . ' ' . escapeshellarg($new_sites_subdir);
@@ -140,7 +140,7 @@ function unl_edit_sites() {
         ->condition('installed', 6)
         ->execute();
     } catch (Exception $e) {
-      watchdog('unl cron', $e->getMessage(), array(), WATCHDOG_ERROR);
+      \Drupal::logger('unl cron')->error($e->getMessage(), array());
       db_update('unl_sites')
         ->fields(array('installed' => 5))
         ->condition('site_id', $row['site_id'])
@@ -174,7 +174,7 @@ function unl_add_aliases() {
         ->condition('site_alias_id', $row->site_alias_id)
         ->execute();
     } catch (Exception $e) {
-      watchdog('unl cron', $e->getMessage(), array(), WATCHDOG_ERROR);
+      \Drupal::logger('unl cron')->error($e->getMessage(), array());
       db_update('unl_sites_aliases')
         ->fields(array('installed' => 5))
         ->condition('site_alias_id', $row->site_alias_id)
@@ -200,7 +200,7 @@ function unl_remove_aliases() {
         ->condition('site_alias_id', $row->site_alias_id)
         ->execute();
     } catch (Exception $e) {
-      watchdog('unl cron', $e->getMessage(), array(), WATCHDOG_ERROR);
+      \Drupal::logger('unl cron')->error($e->getMessage(), array());
       db_update('unl_sites_aliases')
         ->fields(array('installed' => 5))
         ->condition('site_alias_id', $row->site_alias_id)
@@ -227,7 +227,7 @@ function unl_add_page_aliases() {
         ->condition('page_alias_id', $row->page_alias_id)
         ->execute();
     } catch (Exception $e) {
-      watchdog('unl cron', $e->getMessage(), array(), WATCHDOG_ERROR);
+      \Drupal::logger('unl cron')->error($e->getMessage(), array());
       db_update('unl_sites_aliases')
         ->fields(array('installed' => 5))
         ->condition('site_alias_id', $row->page_alias_id)
@@ -253,7 +253,7 @@ function unl_remove_page_aliases() {
         ->condition('page_alias_id', $row->page_alias_id)
         ->execute();
     } catch (Exception $e) {
-      watchdog('unl cron', $e->getMessage(), array(), WATCHDOG_ERROR);
+      \Drupal::logger('unl cron')->error($e->getMessage(), array());
       db_update('unl_page_aliases')
         ->fields(array('installed' => 5))
         ->condition('page_alias_id', $row->page_alias_id)
@@ -284,7 +284,7 @@ function unl_add_site($site_path, $uri, $clean_url, $db_prefix, $site_id, $clone
   $db_prefix .= '_' . $database['prefix'];
 
   $php_path = escapeshellarg($_SERVER['_']);
-  $drupal_root = escapeshellarg(DRUPAL_ROOT);
+  $drupal_root = escapeshellarg(\Drupal::root());
   $uri = escapeshellarg($uri);
   $sites_subdir = escapeshellarg($sites_subdir);
   $db_url = escapeshellarg($db_url);
@@ -353,8 +353,8 @@ function unl_clone_site($from_id, $to_id) {
   }
 
   //Copy over files
-  $from_path = escapeshellarg(DRUPAL_ROOT . '/sites/' . unl_get_sites_subdir($clone_from_site['uri']) . '/files');
-  $to_path = escapeshellarg(DRUPAL_ROOT . '/sites/' . unl_get_sites_subdir($clone_to_site['uri']) . '/');
+  $from_path = escapeshellarg(\Drupal::root() . '/sites/' . unl_get_sites_subdir($clone_from_site['uri']) . '/files');
+  $to_path = escapeshellarg(\Drupal::root() . '/sites/' . unl_get_sites_subdir($clone_to_site['uri']) . '/');
 
   //Note: .htaccess is read only and can not be replaced
   $command = "cp -rp $from_path $to_path";
@@ -376,7 +376,7 @@ function unl_clone_site($from_id, $to_id) {
   $uri = escapeshellarg($clone_to_site['uri']);
   
   //Remove the primary base url
-  $command = DRUPAL_ROOT."/sites/all/modules/drush/drush -y --uri=$uri vdel unl_primary_base_url 2>&1";
+  $command = \Drupal::root()."/sites/all/modules/drush/drush -y --uri=$uri vdel unl_primary_base_url 2>&1";
   exec($command, $output, $status);
   
   if (0 !== $status) {
@@ -384,7 +384,7 @@ function unl_clone_site($from_id, $to_id) {
   }
   
   //Clear the cache
-  $command = DRUPAL_ROOT."/sites/all/modules/drush/drush -y --uri=$uri cc all 2>&1";
+  $command = \Drupal::root()."/sites/all/modules/drush/drush -y --uri=$uri cc all 2>&1";
   exec($command, $output, $status);
 
   if (0 !== $status) {
@@ -409,16 +409,16 @@ function getTableNamesWithPrefix($prefix) {
 
 function unl_remove_site($site_path, $uri, $db_prefix, $site_id) {
   $sites_subdir = unl_get_sites_subdir($uri);
-  $sites_subdir = DRUPAL_ROOT . '/sites/' . $sites_subdir;
+  $sites_subdir = \Drupal::root() . '/sites/' . $sites_subdir;
   $sites_subdir = realpath($sites_subdir);
 
   // A couple checks to make sure we aren't deleting something we shouldn't be.
-  if (substr($sites_subdir, 0, strlen(DRUPAL_ROOT . '/sites/')) != DRUPAL_ROOT . '/sites/') {
-    throw new Exception('Attempt to delete a directory outside DRUPAL_ROOT was aborted.');
+  if (substr($sites_subdir, 0, strlen(\Drupal::root() . '/sites/')) != \Drupal::root() . '/sites/') {
+    throw new Exception('Attempt to delete a directory outside \Drupal::root() was aborted.');
   }
 
-  if (strlen($sites_subdir) <= strlen(DRUPAL_ROOT . '/sites/')) {
-    throw new Exception('Attempt to delete a directory outside DRUPAL_ROOT was aborted.');
+  if (strlen($sites_subdir) <= strlen(\Drupal::root() . '/sites/')) {
+    throw new Exception('Attempt to delete a directory outside \Drupal::root() was aborted.');
   }
 
   unl_drop_site_tables($db_prefix);
@@ -473,7 +473,7 @@ function unl_remove_alias($base_uri, $path, $alias_id) {
   /* TODO: Remove the next line once all sites have been converted
    *       to the new method of creating aliases.
    */
-  unlink(DRUPAL_ROOT . '/sites/' . $alias_config_dir);
+  unlink(\Drupal::root() . '/sites/' . $alias_config_dir);
 
   unl_remove_alias_from_sites_php($alias_id);
   unl_remove_site_from_htaccess($alias_id, TRUE);
@@ -502,10 +502,10 @@ function unl_add_site_to_htaccess($site_id, $site_path, $is_alias) {
     $site_path .= '/';
   }
 
-  unl_require_writable(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  unl_require_writable(\Drupal::root() . '/.htaccess-subsite-map.txt');
 
   $stub_token = '# %UNL_CREATION_TOOL_STUB%';
-  $htaccess = file_get_contents(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  $htaccess = file_get_contents(\Drupal::root() . '/.htaccess-subsite-map.txt');
   $stub_pos = strpos($htaccess, $stub_token);
   if ($stub_pos === FALSE) {
     throw new Exception('Unable to find stub site entry in .htaccess-subsite-map.txt.');
@@ -519,7 +519,7 @@ function unl_add_site_to_htaccess($site_id, $site_path, $is_alias) {
                  . $stub_token
                  . substr($htaccess, $stub_pos + strlen($stub_token));
 
-  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/.htaccess-subsite-map.txt', $new_htaccess);
+  _unl_file_put_contents_atomic(\Drupal::root() . '/.htaccess-subsite-map.txt', $new_htaccess);
 }
 
 function unl_remove_site_from_htaccess($site_id, $is_alias) {
@@ -530,9 +530,9 @@ function unl_remove_site_from_htaccess($site_id, $is_alias) {
     $site_or_alias = 'SITE';
   }
 
-  unl_require_writable(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  unl_require_writable(\Drupal::root() . '/.htaccess-subsite-map.txt');
 
-  $htaccess = file_get_contents(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  $htaccess = file_get_contents(\Drupal::root() . '/.htaccess-subsite-map.txt');
   $site_start_token = "\n# %UNL_START_{$site_or_alias}_ID_{$site_id}%";
   $site_end_token = "# %UNL_END_{$site_or_alias}_ID_{$site_id}%\n";
 
@@ -546,14 +546,14 @@ function unl_remove_site_from_htaccess($site_id, $is_alias) {
   $new_htaccess = substr($htaccess, 0, $start_pos)
                 . substr($htaccess, $end_pos + strlen($site_end_token))
                 ;
-  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/.htaccess-subsite-map.txt', $new_htaccess);
+  _unl_file_put_contents_atomic(\Drupal::root() . '/.htaccess-subsite-map.txt', $new_htaccess);
 }
 
 function unl_add_page_alias_to_htaccess($site_id, $host, $path, $to_uri) {
-  unl_require_writable(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  unl_require_writable(\Drupal::root() . '/.htaccess-subsite-map.txt');
 
   $stub_token = '# %UNL_CREATION_TOOL_STUB%';
-  $htaccess = file_get_contents(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  $htaccess = file_get_contents(\Drupal::root() . '/.htaccess-subsite-map.txt');
   $stub_pos = strpos($htaccess, $stub_token);
   if ($stub_pos === FALSE) {
     throw new Exception('Unable to find stub page alias entry in .htaccess-subsite-map.txt.');
@@ -565,13 +565,13 @@ function unl_add_page_alias_to_htaccess($site_id, $host, $path, $to_uri) {
                 . $stub_token
                 . substr($htaccess, $stub_pos + strlen($stub_token));
 
-  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/.htaccess-subsite-map.txt', $new_htaccess);
+  _unl_file_put_contents_atomic(\Drupal::root() . '/.htaccess-subsite-map.txt', $new_htaccess);
 }
 
 function unl_remove_page_alias_from_htaccess($site_id) {
-  unl_require_writable(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  unl_require_writable(\Drupal::root() . '/.htaccess-subsite-map.txt');
 
-  $htaccess = file_get_contents(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  $htaccess = file_get_contents(\Drupal::root() . '/.htaccess-subsite-map.txt');
   $site_start_token = "\n# %UNL_START_PAGE_ALIAS_ID_{$site_id}%";
   $site_end_token = "# %UNL_END_PAGE_ALIAS_ID_{$site_id}%\n";
 
@@ -585,14 +585,14 @@ function unl_remove_page_alias_from_htaccess($site_id) {
   $new_htaccess = substr($htaccess, 0, $start_pos)
                 . substr($htaccess, $end_pos + strlen($site_end_token))
                 ;
-  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/.htaccess-subsite-map.txt', $new_htaccess);
+  _unl_file_put_contents_atomic(\Drupal::root() . '/.htaccess-subsite-map.txt', $new_htaccess);
 }
 
 function unl_add_alias_to_sites_php($alias_site_dir, $real_site_dir, $alias_id) {
-  unl_require_writable(DRUPAL_ROOT . '/sites/sites.php');
+  unl_require_writable(\Drupal::root() . '/sites/sites.php');
 
   $stub_token = '# %UNL_CREATION_TOOL_STUB%';
-  $sites_php = file_get_contents(DRUPAL_ROOT . '/sites/sites.php');
+  $sites_php = file_get_contents(\Drupal::root() . '/sites/sites.php');
   $stub_pos = strpos($sites_php, $stub_token);
   if ($stub_pos === FALSE) {
     throw new Exception('Unable to find stub alias entry in sites.php.');
@@ -604,13 +604,13 @@ function unl_add_alias_to_sites_php($alias_site_dir, $real_site_dir, $alias_id) 
                  . $stub_token
                  . substr($sites_php, $stub_pos + strlen($stub_token))
                  ;
-  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/sites/sites.php', $new_sites_php);
+  _unl_file_put_contents_atomic(\Drupal::root() . '/sites/sites.php', $new_sites_php);
 }
 
 function unl_remove_alias_from_sites_php($alias_id) {
-  unl_require_writable(DRUPAL_ROOT . '/sites/sites.php');
+  unl_require_writable(\Drupal::root() . '/sites/sites.php');
 
-  $sites_php = file_get_contents(DRUPAL_ROOT . '/sites/sites.php');
+  $sites_php = file_get_contents(\Drupal::root() . '/sites/sites.php');
   $site_start_token = "\n# %UNL_START_ALIAS_ID_{$alias_id}%";
   $site_end_token = "# %UNL_END_ALIAS_ID_{$alias_id}%\n";
 
@@ -624,7 +624,7 @@ function unl_remove_alias_from_sites_php($alias_id) {
   $new_sites_php = substr($sites_php, 0, $start_pos)
                  . substr($sites_php, $end_pos + strlen($site_end_token))
                  ;
-  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/sites/sites.php', $new_sites_php);
+  _unl_file_put_contents_atomic(\Drupal::root() . '/sites/sites.php', $new_sites_php);
 }
 
 function unl_require_writable($path) {

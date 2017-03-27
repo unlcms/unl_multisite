@@ -14,9 +14,9 @@ if (PHP_SAPI != 'cli') {
 }
 
 chdir(dirname(__FILE__) . '/../../../..');
-define('DRUPAL_ROOT', getcwd());
+define('\Drupal::root()', getcwd());
 
-require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
+require_once \Drupal::root() . '/includes/bootstrap.inc';
 drupal_override_server_variables();
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
 require_once drupal_get_path('module', 'unl') . '/includes/common.php';
@@ -62,7 +62,7 @@ foreach ($map as $site) {
 function get_command_to_remove_from_site($uid, $uri) {
   $uri = escapeshellarg($uri);
   $uid = escapeshellarg($uid);
-  return "php ".DRUPAL_ROOT."/sites/all/modules/drush/drush.php -l $uri user-remove-role 'Site Admin' --name=$uid";
+  return "php ".\Drupal::root()."/sites/all/modules/drush/drush.php -l $uri user-remove-role 'Site Admin' --name=$uid";
 }
 
 if (count($sites_with_no_users) > 10) {
