@@ -1,170 +1,14 @@
 <?php
 
 function unl_multisite_schema() {
-  // This schema was split off the unl module. If this module is being enabled on
-  //   a legacy site with the old unl module installed, without this check it will
-  //   error out due to the unl_sites table already existing.
-  if (!db_table_exists('unl_sites')) {
-    $schema = array();
-    $schema['unl_sites'] = array(
-      'description' => 'Table of tables to be programatically created',
-      'fields' => array(
-        'site_id' => array(
-        'type'     => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        ),
-        'site_path' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-        ),
-        'uri' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-        ),
-        'installed' => array(
-        'type'     => 'int',
-        'not null' => TRUE,
-        'default'  => 0,
-        ),
-        'clean_url' => array(
-        'type'     => 'int',
-        'not null' => TRUE,
-        'default'  => 1,
-        ),
-        'db_prefix' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-        ),
-        'site_admin' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-        ),
-        'migration_url' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-        ),
-        'migration_path' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-        ),
-        'department' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-        ),
-
-      ),
-      'primary key' => array('site_id'),
-      'unique keys' => array(
-        'sub_site'  => array('site_path'),
-        'uri'     => array('uri'),
-        'db_prefix' => array('db_prefix'),
-      ),
-    );
-
-    $schema['unl_sites_aliases'] = array(
-      'description' => 'Table of URL aliases for UNL sites.',
-      'fields' => array(
-        'site_alias_id' => array(
-        'type'     => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        ),
-        'site_id' => array(
-        'type'     => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        ),
-        'base_uri' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        ),
-        'path' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        ),
-        'installed' => array(
-        'type'     => 'int',
-        'not null' => TRUE,
-        'default'  => 0,
-        ),
-      ),
-      'primary key' => array('site_alias_id'),
-      'unique keys' => array(
-        'alias_uri' => array('base_uri', 'path'),
-      ),
-      'foreign keys' => array(
-        'aliased_site' => array(
-        'table'   => 'unl_sites',
-        'columns' => array('site_id' => 'site_id'),
-        ),
-      ),
-    );
-
-    $schema['unl_page_aliases'] = array(
-      'description' => 'Table of URL aliases for UNL pages.',
-      'fields' => array(
-        'page_alias_id' => array(
-        'type'     => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        ),
-        'from_uri' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        ),
-        'to_uri' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        ),
-        'installed' => array(
-        'type'     => 'int',
-        'not null' => TRUE,
-        'default'  => 0,
-        ),
-      ),
-      'primary key' => array('page_alias_id'),
-      'unique keys' => array(
-        'from_uri' => array('from_uri'),
-      ),
-    );
-
-    return $schema;
-  }
-}
-
-function unl_multisite_update_7100() {
-  $table = array(
-    'description' => 'Table of tables to be programatically created',
+  $schema = array();
+  $schema['unl_sites'] = array(
+    'description' => 'Multisite installations.',
     'fields' => array(
       'site_id' => array(
         'type'     => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
-      'site_path_prefix' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
       ),
       'site_path' => array(
         'type'     => 'varchar',
@@ -182,52 +26,52 @@ function unl_multisite_update_7100() {
         'type'     => 'int',
         'not null' => TRUE,
         'default'  => 0,
-      )
+      ),
+      'clean_url' => array(
+        'type'     => 'int',
+        'not null' => TRUE,
+        'default'  => 1,
+      ),
+      'db_prefix' => array(
+        'type'     => 'varchar',
+        'length'   => 255,
+        'not null' => TRUE,
+        'default'  => '',
+      ),
+      'clone_from_id' => array(
+        'type'     => 'int',
+        'length'   => 10,
+        'not null' => FALSE,
+        'default'  => NULL,
+      ),
     ),
     'primary key' => array('site_id'),
     'unique keys' => array(
-      'sub_site' => array('site_path_prefix', 'site_path'),
-    )
+      'sub_site' => array('site_path'),
+      'uri' => array('uri'),
+      'db_prefix' => array('db_prefix'),
+    ),
   );
 
-  db_create_table('unl_sites', $table);
-}
-
-function unl_multisite_update_7101() {
-  db_add_field('unl_sites', 'clean_url', array(
-    'type'     => 'int',
-    'not null' => TRUE,
-    'default'  => 1,
-  ));
-}
-
-function unl_multisite_update_7102() {
-  db_add_field('unl_sites', 'db_prefix', array(
-    'type'     => 'varchar',
-    'length'   => 255,
-    'not null' => TRUE,
-    'default'  => '',
-  ));
-  db_query('UPDATE {unl_sites} SET db_prefix = site_path');
-  db_query("UPDATE {unl_sites} SET site_path = CONCAT(site_path_prefix, '/', site_path) WHERE site_path_prefix != ''");
-  db_drop_field('unl_sites', 'site_path_prefix');
-}
-
-function unl_multisite_update_7103() {
-  $table = array(
-    'description' => 'Table of URL aliases for UNL sites.',
+  $schema['unl_sites_aliases'] = array(
+    'description' => 'Table of URL aliases for multisite sites.',
     'fields' => array(
       'site_alias_id' => array(
         'type'     => 'serial',
         'unsigned' => TRUE,
         'not null' => TRUE,
-      ),
+        ),
       'site_id' => array(
         'type'     => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-      'uri' => array(
+      'base_uri' => array(
+        'type'     => 'varchar',
+        'length'   => 255,
+        'not null' => TRUE,
+      ),
+      'path' => array(
         'type'     => 'varchar',
         'length'   => 255,
         'not null' => TRUE,
@@ -240,65 +84,18 @@ function unl_multisite_update_7103() {
     ),
     'primary key' => array('site_alias_id'),
     'unique keys' => array(
-      'alias_uri' => array('uri'),
+      'alias_uri' => array('base_uri', 'path'),
     ),
     'foreign keys' => array(
       'aliased_site' => array(
-        'table'   => 'unl_sites',
+        'table' => 'unl_sites',
         'columns' => array('site_id' => 'site_id'),
       ),
     ),
   );
 
-  db_create_table('unl_sites_aliases', $table);
-}
-
-function unl_multisite_update_7104() {
-  db_add_field('unl_sites', 'site_admin', array(
-    'type'     => 'varchar',
-    'length'   => 255,
-    'not null' => TRUE,
-    'default'  => '',
-  ));
-}
-
-function unl_multisite_update_7105() {
-  db_add_field('unl_sites', 'migration_url', array(
-    'type'     => 'varchar',
-    'length'   => 255,
-    'not null' => TRUE,
-    'default'  => '',
-  ));
-  db_add_field('unl_sites', 'migration_path', array(
-    'type'     => 'varchar',
-    'length'   => 255,
-    'not null' => TRUE,
-    'default'  => '',
-  ));
-}
-
-function unl_multisite_update_7106() {
-  db_drop_unique_key('unl_sites_aliases', 'alias_uri');
-
-  db_change_field('unl_sites_aliases', 'uri', 'base_uri', array(
-    'type'     => 'varchar',
-    'length'   => 255,
-    'not null' => TRUE,
-  ));
-
-  db_add_field('unl_sites_aliases', 'path', array(
-    'type'     => 'varchar',
-    'length'   => 255,
-    'not null' => TRUE,
-    'default'  => '',
-  ));
-
-  db_add_unique_key('unl_sites_aliases', 'alias_uri', array('base_uri', 'path'));
-}
-
-function unl_multisite_update_7107() {
-  $table = array(
-    'description' => 'Table of URL aliases for UNL pages.',
+  $schema['unl_page_aliases'] = array(
+    'description' => 'Table of URL aliases for pages.',
     'fields' => array(
       'page_alias_id' => array(
         'type'     => 'serial',
@@ -327,95 +124,5 @@ function unl_multisite_update_7107() {
     ),
   );
 
-  db_create_table('unl_page_aliases', $table);
-}
-
-function unl_multisite_update_7108() {
-  db_add_field('unl_sites', 'department', array(
-    'type'     => 'varchar',
-    'length'   => 255,
-    'not null' => TRUE,
-    'default'  => '',
-  ));
-}
-
-/**
- * Updates unl sites and site aliases to have trailing slashes.
- */
-function unl_multisite_update_7110() {
-  db_query("UPDATE {unl_sites} SET site_path = CONCAT(site_path, '/') WHERE SUBSTRING(site_path, -1) != '/'");
-  db_query("UPDATE {unl_sites} SET uri = CONCAT(uri, '/') WHERE SUBSTRING(uri, -1) != '/'");
-  db_query("UPDATE {unl_sites_aliases} SET base_uri = CONCAT(base_uri, '/') WHERE SUBSTRING(base_uri, -1) != '/'");
-  db_query("UPDATE {unl_sites_aliases} SET path = CONCAT(path, '/') WHERE SUBSTRING(path, -1) != '/' AND path != ''");
-}
-
-function unl_multisite_update_7111() {
-  db_add_unique_key('unl_sites', 'uri', array('uri'));
-  db_add_unique_key('unl_sites', 'db_prefix', array('db_prefix'));
-}
-
-function unl_multisite_update_7112() {
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_wdn_registry_production');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_wdn_registry_host');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_wdn_registry_username');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_wdn_registry_password');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_wdn_registry_database');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_frontier_username');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_frontier_password');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_site_created_email_address');
-
-  // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// variable_del('unl_site_created_alert_admins');
-
-}
-
-function unl_multisite_update_7113() {
-  db_add_field('unl_sites', 'clone_from_id', array(
-    'type'     => 'int',
-    'length'   => 10,
-    'not null' => FALSE,
-    'default'  => NULL,
-  ));
+  return $schema;
 }

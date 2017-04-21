@@ -1,7 +1,5 @@
 name: 'UNL Multisite'
 description: 'Admin interface to create and manage multiple site installations.'
 package: UNL
-dependencies:
-  - unl
 core: 8.x
 type: module

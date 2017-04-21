@@ -1,7 +1,5 @@
 <?php
 
-require_once  drupal_get_path('module', 'unl') . '/includes/common.php';
-
 /**
  * Implements hook_block_info()
  */
