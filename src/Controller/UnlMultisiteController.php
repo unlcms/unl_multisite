@@ -19,7 +19,7 @@ class UnlMultisiteController extends ControllerBase {
  * @return array
  *   A render array representing the administrative page content.
  */
-  public function sitesOverview() {
+  public function XXsitesOverview() {
 
     $build = array(
       '#type' => 'markup',

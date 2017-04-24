@@ -2,4 +2,4 @@ unl_multisite.site_add:
   route_name: unl_multisite.site_add
   title: 'Create new site'
   appears_on:
-    - unl_multisite.sites
+    - unl_multisite.site_list
