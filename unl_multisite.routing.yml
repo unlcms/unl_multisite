@@ -1,0 +1,18 @@
+unl_multisite.sites:
+  path: '/admin/sites/unl'
+  defaults:
+    _controller: '\Drupal\unl_multisite\Controller\UnlMultisiteController::sitesOverview'
+    _title: 'Site management'
+  requirements:
+    _permission: 'unl site creation'
+
+unl_multisite.site_add:
+  path: '/admin/sites/unl/sites/add'
+  defaults:
+    _form: '\Drupal\unl_multisite\Form\UnlMultisiteAdd'
+    _title: 'Create new site'
+  requirements:
+    _permission: 'unl site creation'
+
+
+

@@ -16,12 +16,6 @@ function unl_multisite_schema() {
         'not null' => TRUE,
         'default'  => '',
       ),
-      'uri' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-        'default'  => '',
-      ),
       'installed' => array(
         'type'     => 'int',
         'not null' => TRUE,

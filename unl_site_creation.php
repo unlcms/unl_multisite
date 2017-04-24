@@ -4,7 +4,7 @@
  * admin/sites/unl as specified in unl_multisite_menu().
  */
 
-require_once \Drupal::root() . '/includes/install.core.inc';
+// require_once \Drupal::root() . '/includes/install.core.inc';
 
 /**
  * Page callback for admin/sites/unl
