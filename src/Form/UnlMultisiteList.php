@@ -194,10 +194,10 @@ class UnlMultisiteList extends FormBase {
     switch ($order['sql']) {
       case 'uri':
         if ($sort == 'asc') {
-          usort($rows, function ($a, $b) {return strcasecmp($a['uri'], $b['uri']);});
+          usort($rows, function ($a, $b) {return strcasecmp($a['uri']['#title'], $b['uri']['#title']);});
         }
         else {
-          usort($rows, function ($a, $b) {return strcasecmp($b['uri'], $a['uri']);});
+          usort($rows, function ($a, $b) {return strcasecmp($b['uri']['#title'], $a['uri']['#title']);});
         }
         break;
       case 'name':

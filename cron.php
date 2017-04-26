@@ -10,18 +10,24 @@
  *  6: 'Scheduled for site update.'
  */
 
+use Drupal\Core\Database\Database;
+use Drupal\Core\DrupalKernel;
+use Drupal\Core\Site\Settings;
+use Drupal\Core\Url;
+use Symfony\Component\HttpFoundation\Request;
+
 if (PHP_SAPI != 'cli') {
   echo 'This script must be run from the shell!';
   exit;
 }
 
-chdir(dirname(__FILE__) . '/../../../..');
-define('\Drupal::root()', getcwd());
-
-require_once \Drupal::root() . '/includes/bootstrap.inc';
-drupal_override_server_variables();
-drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-require_once drupal_get_path('module', 'unl') . '/includes/common.php';
+// Bootstrap.
+$autoloader = require __DIR__ . '/../../autoload.php';
+require_once __DIR__ . '/../../core/includes/bootstrap.inc';
+require_once __DIR__ . '/../../core/includes/database.inc';
+$request = Request::createFromGlobals();
+Settings::initialize(dirname(dirname(__DIR__)), DrupalKernel::findSitePath($request), $autoloader);
+$kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod')->boot();
 
 unl_edit_sites();
 unl_remove_aliases();
@@ -40,7 +46,7 @@ function unl_add_sites() {
       ->condition('site_id', $row['site_id'])
       ->execute();
     try {
-      unl_add_site($row['site_path'], $row['uri'], $row['clean_url'], $row['db_prefix'], $row['site_id'], $row['clone_from_id']);
+      unl_add_site($row['site_path'], $row['clean_url'], $row['db_prefix'], $row['site_id'], $row['clone_from_id']);
       db_update('unl_sites')
         ->fields(array('installed' => 2))
         ->condition('site_id', $row['site_id'])
@@ -63,7 +69,7 @@ function unl_remove_sites() {
       ->condition('site_id', $row['site_id'])
       ->execute();
     try {
-      unl_remove_site($row['site_path'], $row['uri'], $row['db_prefix'], $row['site_id']);
+      unl_remove_site($row['site_path'], $row['db_prefix'], $row['site_id']);
       db_delete('unl_sites')
         ->condition('site_id', $row['site_id'])
         ->execute();
@@ -88,9 +94,8 @@ function unl_edit_sites() {
         ->execute()
         ->fetchAssoc();
 
-      $new_uri = $alias['base_uri'] . $alias['path'];
       db_update('unl_sites')
-        ->fields(array('site_path' => $alias['path'], 'uri' => $new_uri))
+        ->fields(array('site_path' => $alias['path']))
         ->condition('site_id', $row['site_id'])
         ->execute();
 
@@ -262,7 +267,7 @@ function unl_remove_page_aliases() {
   }
 }
 
-function unl_add_site($site_path, $uri, $clean_url, $db_prefix, $site_id, $clone_from_id) {
+function unl_add_site($site_path, $clean_url, $db_prefix, $site_id, $clone_from_id) {
   if (substr($site_path, 0, 1) == '/') {
     $site_path = substr($site_path, 1);
   }
@@ -270,10 +275,12 @@ function unl_add_site($site_path, $uri, $clean_url, $db_prefix, $site_id, $clone
     $site_path = substr($site_path, 0, -1);
   }
 
-  $sites_subdir = unl_get_sites_subdir($uri);
+  $sites_subdir = unl_get_sites_subdir($site_path);
   
   //Create a fresh site
-  $database = $GLOBALS['databases']['default']['default'];
+  $connection_info = Database::getConnectionInfo();
+  $database = $connection_info['default'];
+
   $db_url = $database['driver']
     . '://' . $database['username']
     . ':'   . $database['password']
@@ -283,14 +290,14 @@ function unl_add_site($site_path, $uri, $clean_url, $db_prefix, $site_id, $clone
   ;
   $db_prefix .= '_' . $database['prefix'];
 
-  $php_path = escapeshellarg($_SERVER['_']);
-  $drupal_root = escapeshellarg(\Drupal::root());
-  $uri = escapeshellarg($uri);
+  $php_path = PHP_BINARY;
+  $x = Url::fromUserInput('/'.$site_path, array('absolute'=>TRUE, 'https'=>FALSE));
+  $uri = escapeshellarg($x);
   $sites_subdir = escapeshellarg($sites_subdir);
   $db_url = escapeshellarg($db_url);
   $db_prefix = escapeshellarg($db_prefix);
 
-  $command = "$php_path sites/all/modules/drush/drush.php -y --uri=$uri site-install unl_profile --sites-subdir=$sites_subdir --db-url=$db_url --db-prefix=$db_prefix --clean-url=$clean_url 2>&1";
+  $command = "$php_path ../../vendor/bin/drush.php -y --uri=$uri site-install unl_profile --sites-subdir=$sites_subdir --db-url=$db_url --db-prefix=$db_prefix --clean-url=$clean_url 2>&1";
 
   $result = shell_exec($command);
   echo $result;
@@ -406,9 +413,8 @@ function getTableNamesWithPrefix($prefix) {
   return array_keys($result->fetchAllKeyed());
 }
 
-
-function unl_remove_site($site_path, $uri, $db_prefix, $site_id) {
-  $sites_subdir = unl_get_sites_subdir($uri);
+function unl_remove_site($site_path, $db_prefix, $site_id) {
+  $sites_subdir = unl_get_sites_subdir($site_path);
   $sites_subdir = \Drupal::root() . '/sites/' . $sites_subdir;
   $sites_subdir = realpath($sites_subdir);
 
@@ -436,8 +442,7 @@ function unl_remove_site($site_path, $uri, $db_prefix, $site_id) {
   }
 }
 
-function unl_drop_site_tables($db_prefix)
-{
+function unl_drop_site_tables($db_prefix) {
   $database = $GLOBALS['databases']['default']['default'];
   $db_prefix .= '_' . $database['prefix'];
   
@@ -666,4 +671,23 @@ function _unl_file_put_contents_atomic($filename, $data, $flags = 0, $context = 
   }
 
   return $bytes;
+}
+
+/**
+ * Given a URI, will return the name of the directory for that site in the sites directory.
+ */
+function unl_get_sites_subdir($uri, $trim_subdomain = TRUE) {
+  $path_parts = parse_url($uri);
+  if ($trim_subdomain && substr($path_parts['host'], -7) == 'unl.edu') {
+    $path_parts['host'] = 'unl.edu';
+  }
+  $sites_subdir = $path_parts['host'] . $path_parts['path'];
+  $sites_subdir = strtr($sites_subdir, array('/' => '.'));
+  while (substr($sites_subdir, 0, 1) == '.') {
+    $sites_subdir = substr($sites_subdir, 1);
+  }
+  while (substr($sites_subdir, -1) == '.') {
+    $sites_subdir = substr($sites_subdir, 0, -1);
+  }
+  return $sites_subdir;
 }
