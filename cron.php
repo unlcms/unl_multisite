@@ -21,10 +21,12 @@ if (PHP_SAPI != 'cli') {
   exit;
 }
 
+chdir(dirname(__FILE__) . '/../..');
+
 // Bootstrap.
-$autoloader = require __DIR__ . '/../../autoload.php';
-require_once __DIR__ . '/../../core/includes/bootstrap.inc';
-require_once __DIR__ . '/../../core/includes/database.inc';
+$autoloader = require 'autoload.php';
+require_once  'core/includes/bootstrap.inc';
+require_once  'core/includes/database.inc';
 $request = Request::createFromGlobals();
 Settings::initialize(dirname(dirname(__DIR__)), DrupalKernel::findSitePath($request), $autoloader);
 $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod')->boot();
@@ -288,16 +290,16 @@ function unl_add_site($site_path, $clean_url, $db_prefix, $site_id, $clone_from_
     . ($database['port'] ? ':' . $database['port'] : '')
     . '/'   . $database['database']
   ;
-  $db_prefix .= '_' . $database['prefix'];
+  $db_prefix .= '_' . $database['prefix']['default'];
 
+  // Drush 8 doesn't like single quotes around option values so escapeshellarg doesn't work.
   $php_path = PHP_BINARY;
-  $x = Url::fromUserInput('/'.$site_path, array('absolute'=>TRUE, 'https'=>FALSE));
-  $uri = escapeshellarg($x);
-  $sites_subdir = escapeshellarg($sites_subdir);
-  $db_url = escapeshellarg($db_url);
-  $db_prefix = escapeshellarg($db_prefix);
+  $uri = escapeshellcmd('http://ucommrasmussen.unl.edu/workspace/UNL-CMS-2/'.$site_path);
+  $sites_subdir = escapeshellcmd($sites_subdir);
+  $db_url = escapeshellcmd($db_url);
+  $db_prefix = escapeshellcmd($db_prefix);
 
-  $command = "$php_path ../../vendor/bin/drush.php -y --uri=$uri site-install unl_profile --sites-subdir=$sites_subdir --db-url=$db_url --db-prefix=$db_prefix --clean-url=$clean_url 2>&1";
+  $command = "$php_path vendor/bin/drush.php -y --uri=$uri site-install standard --db-drop-existing-tables=0 --sites-subdir=$sites_subdir --db-url=$db_url --db-prefix=$db_prefix 2>&1";
 
   $result = shell_exec($command);
   echo $result;

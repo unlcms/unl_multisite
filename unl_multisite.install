@@ -42,7 +42,6 @@ function unl_multisite_schema() {
     'primary key' => array('site_id'),
     'unique keys' => array(
       'sub_site' => array('site_path'),
-      'uri' => array('uri'),
       'db_prefix' => array('db_prefix'),
     ),
   );
