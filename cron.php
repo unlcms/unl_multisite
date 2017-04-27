@@ -519,7 +519,7 @@ function unl_add_site_to_htaccess($site_id, $site_path, $is_alias) {
   }
   $new_htaccess = substr($htaccess, 0, $stub_pos)
                 . "# %UNL_START_{$site_or_alias}_ID_{$site_id}%\n";
-  foreach (array('misc', 'modules', 'sites', 'themes') as $drupal_dir) {
+  foreach (array('core', 'modules', 'sites', 'themes') as $drupal_dir) {
     $new_htaccess .=  "$site_path$drupal_dir $drupal_dir\n";
   }
   $new_htaccess .= "# %UNL_END_{$site_or_alias}_ID_{$site_id}%\n\n"
