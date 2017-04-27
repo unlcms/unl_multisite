@@ -16,15 +16,16 @@ function unl_multisite_schema() {
         'not null' => TRUE,
         'default'  => '',
       ),
+      'uri' => array(
+        'type'     => 'varchar',
+        'length'   => 255,
+        'not null' => TRUE,
+        'default'  => '',
+      ),
       'installed' => array(
         'type'     => 'int',
         'not null' => TRUE,
         'default'  => 0,
-      ),
-      'clean_url' => array(
-        'type'     => 'int',
-        'not null' => TRUE,
-        'default'  => 1,
       ),
       'db_prefix' => array(
         'type'     => 'varchar',
@@ -42,6 +43,7 @@ function unl_multisite_schema() {
     'primary key' => array('site_id'),
     'unique keys' => array(
       'sub_site' => array('site_path'),
+      'uri' => array('uri'),
       'db_prefix' => array('db_prefix'),
     ),
   );

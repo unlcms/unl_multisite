@@ -4,6 +4,7 @@ namespace Drupal\unl_multisite\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Configure book settings for this site.
@@ -35,12 +36,6 @@ class UnlMultisiteAdd extends FormBase {
       '#default_value' => '',
       '#required' => FALSE,
     );
-    $form['clean_url'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Use clean URLs'),
-      '#description' => t("Unless you have some reason to think your site won't support this, leave it checked."),
-      '#default_value' => 1,
-    );
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Create site'),
@@ -63,7 +58,6 @@ class UnlMultisiteAdd extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $site_path = $form_state->getValue('site_path');
-    $clean_url = $form_state->getValue('clean_url');
     $clone_from_id = $form_state->getValue('clone_from_id');
 
     if (empty($clone_from_id)) {
@@ -81,10 +75,12 @@ class UnlMultisiteAdd extends FormBase {
     }
     $site_path = implode('/', $site_path);
 
+    $uri = Url::fromUserInput('/'.$site_path, array('absolute' => TRUE, 'https' => FALSE))->toString();
+
     $id = db_insert('unl_sites')
       ->fields(array(
         'site_path' => $site_path,
-        'clean_url' => intval($clean_url),
+        'uri' => $uri,
         'db_prefix' => 'placeholder'.time(),
         'clone_from_id' => $clone_from_id,
       ))
@@ -100,7 +96,7 @@ class UnlMultisiteAdd extends FormBase {
 
     drupal_set_message(t('The site @uri has been scheduled for creation. Run unl_multisite/cron.php to finish install.', array('@uri' => $uri)));
 
-    $url = \Drupal\Core\Url::fromRoute('unl_multisite.sites');
+    $url = \Drupal\Core\Url::fromRoute('unl_multisite.site_list');
     return $form_state->setRedirectUrl($url);
   }
 

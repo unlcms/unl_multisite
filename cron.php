@@ -48,7 +48,7 @@ function unl_add_sites() {
       ->condition('site_id', $row['site_id'])
       ->execute();
     try {
-      unl_add_site($row['site_path'], $row['clean_url'], $row['db_prefix'], $row['site_id'], $row['clone_from_id']);
+      unl_add_site($row['site_path'], $row['uri'], $row['db_prefix'], $row['site_id'], $row['clone_from_id']);
       db_update('unl_sites')
         ->fields(array('installed' => 2))
         ->condition('site_id', $row['site_id'])
@@ -269,7 +269,7 @@ function unl_remove_page_aliases() {
   }
 }
 
-function unl_add_site($site_path, $clean_url, $db_prefix, $site_id, $clone_from_id) {
+function unl_add_site($site_path, $uri, $db_prefix, $site_id, $clone_from_id) {
   if (substr($site_path, 0, 1) == '/') {
     $site_path = substr($site_path, 1);
   }
@@ -277,7 +277,7 @@ function unl_add_site($site_path, $clean_url, $db_prefix, $site_id, $clone_from_
     $site_path = substr($site_path, 0, -1);
   }
 
-  $sites_subdir = unl_get_sites_subdir($site_path);
+  $sites_subdir = unl_get_sites_subdir($uri);
   
   //Create a fresh site
   $connection_info = Database::getConnectionInfo();
@@ -294,7 +294,7 @@ function unl_add_site($site_path, $clean_url, $db_prefix, $site_id, $clone_from_
 
   // Drush 8 doesn't like single quotes around option values so escapeshellarg doesn't work.
   $php_path = PHP_BINARY;
-  $uri = escapeshellcmd('http://ucommrasmussen.unl.edu/workspace/UNL-CMS-2/'.$site_path);
+  $uri = escapeshellcmd($uri);
   $sites_subdir = escapeshellcmd($sites_subdir);
   $db_url = escapeshellcmd($db_url);
   $db_prefix = escapeshellcmd($db_prefix);
