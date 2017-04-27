@@ -3,7 +3,13 @@
 use Drupal\Core\DrupalKernel;
 
 require_once 'core/includes/bootstrap.inc';
-unl_bootstrap_multisite_without_symlinks($request);
+
+unl_bootstrap($request);
+
+
+function unl_bootstrap($request) {
+  unl_bootstrap_multisite_without_symlinks($request);
+}
 
 function unl_bootstrap_multisite_without_symlinks($request) {
   $original_script_name = $request->server->get('SCRIPT_NAME');
