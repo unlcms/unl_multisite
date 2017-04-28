@@ -1,0 +1,12 @@
+{
+  "name": "unlcms/unl_multisite",
+  "description": "Admin interface to create and manage multiple site installations.",
+  "type": "drupal-module",
+  "authors": [
+    {
+      "name": "Eric Rasmussen (ericras)",
+      "homepage": "https://www.drupal.org/u/ericras",
+      "role": "Maintainer"
+    }
+  ]
+}
