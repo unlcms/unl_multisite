@@ -299,7 +299,7 @@ function unl_add_site($site_path, $uri, $db_prefix, $site_id, $clone_from_id) {
   $db_url = escapeshellcmd($db_url);
   $db_prefix = escapeshellcmd($db_prefix);
 
-  $command = "$php_path vendor/bin/drush.php -y --uri=$uri site-install standard --db-drop-existing-tables=0 --sites-subdir=$sites_subdir --db-url=$db_url --db-prefix=$db_prefix 2>&1";
+  $command = "$php_path vendor/bin/drush.php -y --uri=$uri site-install config_installer --config-dir=config/sync --db-drop-existing-tables=0 --sites-subdir=$sites_subdir --db-url=$db_url --db-prefix=$db_prefix 2>&1";
 
   $result = shell_exec($command);
   echo $result;
