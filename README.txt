@@ -1,7 +1,9 @@
-Copy .htaccess-subsite-map.txt to the Drupal root.
-
 Insert the following line into index.php after $request is initialized:
-require_once 'modules/unl_multisite/bootstrap.inc';
+require_once './modules/contrib/unl_multisite/bootstrap.inc';
 
-Add the following line to your httpd.conf:
-RewriteMap drupal_multisite txt:<DRUPAL_ROOT>/.htaccess-subsite-map.txt
+
+Your index.php file should look like:
+
+$request = Request::createFromGlobals();
+require_once './modules/contrib/unl_multisite/bootstrap.inc';
+$response = $kernel->handle($request);

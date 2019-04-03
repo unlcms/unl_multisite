@@ -76,35 +76,5 @@ function unl_multisite_schema() {
     ),
   );
 
-  $schema['unl_page_aliases'] = array(
-    'description' => 'Table of URL aliases for pages.',
-    'fields' => array(
-      'page_alias_id' => array(
-        'type'     => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'from_uri' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-      ),
-      'to_uri' => array(
-        'type'     => 'varchar',
-        'length'   => 255,
-        'not null' => TRUE,
-      ),
-      'installed' => array(
-        'type'     => 'int',
-        'not null' => TRUE,
-        'default'  => 0,
-      ),
-    ),
-    'primary key' => array('page_alias_id'),
-    'unique keys' => array(
-      'from_uri' => array('from_uri'),
-    ),
-  );
-
   return $schema;
 }

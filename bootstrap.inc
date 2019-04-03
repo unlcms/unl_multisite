@@ -46,6 +46,4 @@ function unl_bootstrap_multisite_without_symlinks($request) {
     $previous_conf_path = $conf_path;
     $previous_script_name = $request->server->get('SCRIPT_NAME');
   }
-
-  DrupalKernel::findSitePath($request);
 }
