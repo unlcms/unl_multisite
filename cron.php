@@ -21,7 +21,7 @@ if (PHP_SAPI != 'cli') {
   exit;
 }
 
-chdir(dirname(__FILE__) . '/../..');
+chdir(dirname(__FILE__) . '/../../..');
 
 // Bootstrap.
 $autoloader = require 'autoload.php';
@@ -31,13 +31,13 @@ $request = Request::createFromGlobals();
 Settings::initialize(dirname(dirname(__DIR__)), DrupalKernel::findSitePath($request), $autoloader);
 $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod')->boot();
 
-unl_edit_sites();
-unl_remove_aliases();
-unl_remove_sites();
-unl_remove_page_aliases();
+//unl_edit_sites();
+//unl_remove_aliases();
+//unl_remove_sites();
+//unl_remove_page_aliases();
 unl_add_sites();
-unl_add_aliases();
-unl_add_page_aliases();
+//unl_add_aliases();
+//unl_add_page_aliases();
 
 function unl_add_sites() {
   $query = db_query('SELECT * FROM {unl_sites} WHERE installed=0');
@@ -48,7 +48,7 @@ function unl_add_sites() {
       ->condition('site_id', $row['site_id'])
       ->execute();
     try {
-      unl_add_site($row['site_path'], $row['uri'], $row['db_prefix'], $row['site_id'], $row['clone_from_id']);
+      unl_add_site($row['site_path'], $row['uri'], $row['site_id']);
       db_update('unl_sites')
         ->fields(array('installed' => 2))
         ->condition('site_id', $row['site_id'])
@@ -269,7 +269,7 @@ function unl_remove_page_aliases() {
   }
 }
 
-function unl_add_site($site_path, $uri, $db_prefix, $site_id, $clone_from_id) {
+function unl_add_site($site_path, $uri, $site_id) {
   if (substr($site_path, 0, 1) == '/') {
     $site_path = substr($site_path, 1);
   }
@@ -288,30 +288,31 @@ function unl_add_site($site_path, $uri, $db_prefix, $site_id, $clone_from_id) {
     . ':'   . $database['password']
     . '@'   . $database['host']
     . ($database['port'] ? ':' . $database['port'] : '')
-    . '/'   . $database['database']
+    . '/unlcms'   . $site_id
   ;
-  $db_prefix .= '_' . $database['prefix']['default'];
 
   // Drush 8 doesn't like single quotes around option values so escapeshellarg doesn't work.
-  $php_path = PHP_BINARY;
+  $php_path = escapeshellarg($_SERVER['_']);
   $uri = escapeshellcmd($uri);
   $sites_subdir = escapeshellcmd($sites_subdir);
   $db_url = escapeshellcmd($db_url);
-  $db_prefix = escapeshellcmd($db_prefix);
 
-  $command = "$php_path vendor/bin/drush.php -y --uri=$uri site-install config_installer --config-dir=config/sync --db-drop-existing-tables=0 --sites-subdir=$sites_subdir --db-url=$db_url --db-prefix=$db_prefix 2>&1";
+  $command = "drush -y --uri=$uri site-install --existing-config --sites-subdir=$sites_subdir --db-url=$db_url 2>&1";
 
+  // Running the command twice as a hack. First time sets up the site directory but installation stops.
+  // Second runs completes it.
   $result = shell_exec($command);
   echo $result;
-  if (stripos($result, 'Drush command terminated abnormally due to an unrecoverable error.') !== FALSE) {
+  if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
+    throw new Exception('Error while running drush site-install.');
+  }
+  $result = shell_exec($command);
+  echo $result;
+  if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
     throw new Exception('Error while running drush site-install.');
   }
 
-  if ($clone_from_id) {
-    unl_clone_site($clone_from_id, $site_id);
-  }
-
-  unl_add_site_to_htaccess($site_id, $site_path, FALSE);
+  //unl_add_site_to_htaccess($site_id, $site_path, FALSE);
 }
 
 function unl_get_site_record($site_id) {

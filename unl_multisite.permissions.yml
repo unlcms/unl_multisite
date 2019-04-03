@@ -1,4 +1,4 @@
 'unl site creation':
   title: 'Site Creation'
-  description: 'Create new Drupal sites using the UNL profile.'
+  description: 'Create new Drupal sites.'
   'restrict access': true

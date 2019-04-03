@@ -25,7 +25,7 @@ class UnlMultisiteList extends FormBase {
     $header = array(
       'uri' => array(
         'data' => t('Default path'),
-        'field' => 'uri',
+        'field' => 'site_path',
       ),
       'name' => array(
         'data' => t('Site name'),
@@ -43,7 +43,7 @@ class UnlMultisiteList extends FormBase {
     );
 
     $sites = db_select('unl_sites', 's')
-      ->fields('s', array('site_id', 'db_prefix', 'installed', 'site_path'))
+      ->fields('s', array('site_id', 'installed', 'site_path'))
       ->execute()
       ->fetchAll();
 

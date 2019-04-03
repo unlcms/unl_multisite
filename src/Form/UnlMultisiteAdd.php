@@ -29,13 +29,6 @@ class UnlMultisiteAdd extends FormBase {
       '#default_value' => 'newsite',
       '#required' => TRUE,
     );
-    $form['clone_from_id'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Site ID to clone'),
-      '#description' => t('The new site will be a clone of an existing site.'),
-      '#default_value' => '',
-      '#required' => FALSE,
-    );
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Create site'),
@@ -58,11 +51,6 @@ class UnlMultisiteAdd extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $site_path = $form_state->getValue('site_path');
-    $clone_from_id = $form_state->getValue('clone_from_id');
-
-    if (empty($clone_from_id)) {
-      $clone_from_id = NULL;
-    }
 
     // Sanitize submitted URLs
     $site_path = explode('/', $site_path);
@@ -81,17 +69,7 @@ class UnlMultisiteAdd extends FormBase {
       ->fields(array(
         'site_path' => $site_path,
         'uri' => $uri,
-        'db_prefix' => 'placeholder'.time(),
-        'clone_from_id' => $clone_from_id,
       ))
-      ->execute();
-
-    // Replace the db_prefix placeholder with s+site_id e.g. s182
-    db_update('unl_sites')
-      ->fields(array(
-        'db_prefix' => 's'.$id,
-      ))
-      ->condition('site_id', $id, '=')
       ->execute();
 
     drupal_set_message(t('The site @uri has been scheduled for creation. Run unl_multisite/cron.php to finish install.', array('@uri' => $uri)));
