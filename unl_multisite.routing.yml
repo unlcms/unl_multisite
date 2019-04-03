@@ -14,5 +14,11 @@ unl_multisite.site_add:
   requirements:
     _permission: 'unl site creation'
 
-
-
+unl_multisite.site_delete:
+  path: '/admin/sites/unl/sites/{site_id}/delete'
+  defaults:
+    _form: '\Drupal\unl_multisite\Form\UnlMultisiteDelete'
+    _title: 'Confirm site deletion'
+  requirements:
+    _permission: 'unl site creation'
+    site_id: ^\d+$

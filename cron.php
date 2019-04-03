@@ -33,7 +33,7 @@ $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod')->boot()
 
 //unl_edit_sites();
 //unl_remove_aliases();
-//unl_remove_sites();
+unl_remove_sites();
 unl_add_sites();
 //unl_add_aliases();
 
@@ -69,7 +69,7 @@ function unl_remove_sites() {
       ->condition('site_id', $row['site_id'])
       ->execute();
     try {
-      unl_remove_site($row['site_path'], $row['db_prefix'], $row['site_id']);
+      unl_remove_site($row['site_path'], $row['uri'], $row['site_id']);
       db_delete('unl_sites')
         ->condition('site_id', $row['site_id'])
         ->execute();
@@ -255,8 +255,8 @@ function unl_add_site($site_path, $uri, $site_id) {
   }
 }
 
-function unl_remove_site($site_path, $db_prefix, $site_id) {
-  $sites_subdir = unl_get_sites_subdir($site_path);
+function unl_remove_site($site_path, $uri, $site_id) {
+  $sites_subdir = unl_get_sites_subdir($uri);
   $sites_subdir = \Drupal::root() . '/sites/' . $sites_subdir;
   $sites_subdir = realpath($sites_subdir);
 
@@ -269,7 +269,13 @@ function unl_remove_site($site_path, $db_prefix, $site_id) {
     throw new Exception('Attempt to delete a directory outside \Drupal::root() was aborted.');
   }
 
-  unl_drop_site_tables($db_prefix);
+  // Drop all the tables in the database.
+  $connection_info = Database::getConnectionInfo();
+  $database = $connection_info['default'];
+  $database['database'] = 'unlcms' . $site_id;
+  $command = "mysqladmin -h {$database['host']} -u {$database['username']} -p{$database['password']} -f drop {$database['database']} 2>&1";
+  $result = shell_exec($command);
+  echo $result;
 
   // Do our best to remove the sites
   shell_exec('chmod -R u+w ' . escapeshellarg($sites_subdir));
@@ -278,25 +284,6 @@ function unl_remove_site($site_path, $db_prefix, $site_id) {
   // If we were using memcache, flush its cache so new sites don't have stale data.
   if (class_exists('MemCacheDrupal', FALSE)) {
     dmemcache_flush();
-  }
-}
-
-function unl_drop_site_tables($db_prefix) {
-  $database = $GLOBALS['databases']['default']['default'];
-  $db_prefix .= '_' . $database['prefix'];
-  
-  // Grab the list of tables we need to drop.
-  $schema = drupal_get_schema(NULL, TRUE);
-  $tables = array_keys($schema);
-
-  // Drop the site's tables
-  foreach ($tables as $table) {
-    $table = $db_prefix . $table;
-    try {
-      db_query("DROP TABLE $table");
-    } catch (PDOException $e) {
-      // probably already gone?
-    }
   }
 }
 

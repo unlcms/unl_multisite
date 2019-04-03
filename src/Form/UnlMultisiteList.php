@@ -83,8 +83,7 @@ class UnlMultisiteList extends FormBase {
               ),
               'delete' => array(
                 'title' => t('delete site'),
-                'url' => Url::fromRoute('unl_multisite.site_list', array()),//'admin/sites/unl/' . $site->site_id . '/delete',
-                'query' => drupal_get_destination(),
+                'url' => Url::fromRoute('unl_multisite.site_delete', ['site_id' => $site->site_id]),
               ),
             ),
           ),
