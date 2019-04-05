@@ -1,3 +1,6 @@
+Installation
+
+1.
 Insert the following line into index.php after $request is initialized:
 require_once './modules/contrib/unl_multisite/bootstrap.inc';
 
@@ -7,3 +10,33 @@ Your index.php file should look like:
 $request = Request::createFromGlobals();
 require_once './modules/contrib/unl_multisite/bootstrap.inc';
 $response = $kernel->handle($request);
+
+
+2.
+Copy .htaccess-subsite-map.txt.sample to the web root and rename to .htaccess-subsite-map.txt
+
+
+3.
+Add this to .htaccess at the web root (inside the <IfModule mod_rewrite.c> </IfModule> block).
+
+```
+  # START unl_multisite SECTION
+  # Add the following line to your httpd.conf where <DRUPAL_ROOT> is the file system path to the Drupal web root.
+  # RewriteMap drupal_unl_multisite txt:<DRUPAL_ROOT>/.htaccess-subsite-map.txt
+  # Do not uncomment the previous line.
+  RewriteRule .*/cron.php cron.php
+  RewriteRule .*/update.php update.php
+  RewriteRule ^(.*?/(core\/assets|core\/misc|core\/modules|core\/themes|modules|sites|themes))(.*) ${drupal_unl_multisite:$1|$1}$3 [DPI]
+
+  RewriteCond ${drupal_unl_multisite://%{HTTP_HOST}%{REQUEST_URI}|NOT_FOUND} !^NOT_FOUND$
+  RewriteRule (.*) ${drupal_unl_multisite://%{HTTP_HOST}%{REQUEST_URI}|$1} [R,L]
+  # END unl_multisite SECTION
+```
+
+
+4.
+Add the following line to your Apache's configuration file (httpd.conf) where <DRUPAL_ROOT> is the file system path to the Drupal web root. Restart Apache afterward.
+
+```
+  RewriteMap drupal_unl_multisite txt:<DRUPAL_ROOT>/.htaccess-subsite-map.txt
+```

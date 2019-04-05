@@ -253,6 +253,8 @@ function unl_add_site($site_path, $uri, $site_id) {
   if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
     throw new Exception('Error while running drush site-install.');
   }
+
+  unl_add_site_to_htaccess($site_id, $site_path, FALSE);
 }
 
 function unl_remove_site($site_path, $uri, $site_id) {
@@ -349,6 +351,66 @@ function unl_require_writable($path) {
   if (!is_writable($path)) {
     throw new Exception('The file "' . $path . '" needs to be writable and is not.');
   }
+}
+
+function unl_add_site_to_htaccess($site_id, $site_path, $is_alias) {
+  if ($is_alias) {
+    $site_or_alias = 'ALIAS';
+  }
+  else {
+    $site_or_alias = 'SITE';
+  }
+
+  if (substr($site_path, -1) != '/') {
+    $site_path .= '/';
+  }
+
+  unl_require_writable(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+
+  $stub_token = '# %UNL_CREATION_TOOL_STUB%';
+  $htaccess = file_get_contents(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  $stub_pos = strpos($htaccess, $stub_token);
+  if ($stub_pos === FALSE) {
+    throw new Exception('Unable to find stub site entry in .htaccess-subsite-map.txt.');
+  }
+  $new_htaccess = substr($htaccess, 0, $stub_pos)
+    . "# %UNL_START_{$site_or_alias}_ID_{$site_id}%\n";
+  foreach (array('core/assets', 'core/misc', 'core/modules', 'core/themes', 'modules', 'sites', 'themes') as $drupal_dir) {
+    $new_htaccess .=  "$site_path$drupal_dir $drupal_dir\n";
+  }
+  $new_htaccess .= "# %UNL_END_{$site_or_alias}_ID_{$site_id}%\n\n"
+    . $stub_token
+    . substr($htaccess, $stub_pos + strlen($stub_token));
+
+  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/.htaccess-subsite-map.txt', $new_htaccess);
+}
+
+function unl_remove_site_from_htaccess($site_id, $is_alias) {
+  if ($is_alias) {
+    $site_or_alias = 'ALIAS';
+  }
+  else {
+    $site_or_alias = 'SITE';
+  }
+
+  unl_require_writable(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+
+  $htaccess = file_get_contents(DRUPAL_ROOT . '/.htaccess-subsite-map.txt');
+  $site_start_token = "\n# %UNL_START_{$site_or_alias}_ID_{$site_id}%";
+  $site_end_token = "# %UNL_END_{$site_or_alias}_ID_{$site_id}%\n";
+
+  $start_pos = strpos($htaccess, $site_start_token);
+  $end_pos = strpos($htaccess, $site_end_token);
+
+  // If its already gone, we don't need to do anything.
+  if ($start_pos === FALSE || $end_pos === FALSE) {
+    return;
+  }
+  $new_htaccess = substr($htaccess, 0, $start_pos)
+    . substr($htaccess, $end_pos + strlen($site_end_token))
+  ;
+
+  _unl_file_put_contents_atomic(DRUPAL_ROOT . '/.htaccess-subsite-map.txt', $new_htaccess);
 }
 
 /**
