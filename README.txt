@@ -17,6 +17,22 @@ Copy .htaccess-subsite-map.txt.sample to the web root and rename to .htaccess-su
 
 
 3.
+Copy sites/example.sites.php to sites/sites.php and add this to the end of the file:
+
+```
+  /**
+   * Stub for the unl_multisite module to generate site aliases.
+   */
+  # THIS SECTION IS AUTOMATICALLY GENERATED
+  # DO NOT EDIT!!!!
+
+  # %UNL_CREATION_TOOL_STUB%
+
+  # END OF AUTOMATICALLY GENERATED AREA
+```
+
+
+4.
 Add this to .htaccess at the web root (inside the <IfModule mod_rewrite.c> </IfModule> block).
 
 ```
@@ -34,9 +50,13 @@ Add this to .htaccess at the web root (inside the <IfModule mod_rewrite.c> </IfM
 ```
 
 
-4.
+5.
 Add the following line to your Apache's configuration file (httpd.conf) where <DRUPAL_ROOT> is the file system path to the Drupal web root. Restart Apache afterward.
 
 ```
   RewriteMap drupal_unl_multisite txt:<DRUPAL_ROOT>/.htaccess-subsite-map.txt
 ```
+
+
+6.
+Set up a cron job on the server to execute unl_multisite/cron.php on a regular basis.
