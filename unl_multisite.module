@@ -71,15 +71,15 @@ function unl_multisite_permission() {
 /**
  * Implementation of hook_theme().
  */
-function unl_multisite_theme() {
-  return array(
-    'unl_site_details' => array(
-      'variables' => array('site_path' => NULL, 'uri' => NULL, 'db_prefix' => NULL),
-      'file' => 'unl_site_creation.php',
-    ),
-    'unl_table' => array(
-      'render element' => 'form',
-      'file' => 'unl_site_creation.php',
-    ),
-  );
-}
+//function unl_multisite_theme() {
+//  return array(
+//    'unl_site_details' => array(
+//      'variables' => array('site_path' => NULL, 'uri' => NULL, 'db_prefix' => NULL),
+//      'file' => 'unl_site_creation.php',
+//    ),
+//    'unl_table' => array(
+//      'render element' => 'form',
+//      'file' => 'unl_site_creation.php',
+//    ),
+//  );
+//}

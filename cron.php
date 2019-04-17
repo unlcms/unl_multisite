@@ -2,7 +2,7 @@
 /**
  * 'installed' database number codes (also seen in unl_multisite/unl_site_creation.php)
  *  0: 'Scheduled for creation.'
- *  1: 'Curently being created.'
+ *  1: 'Currently being created.'
  *  2: 'In production.'
  *  3: 'Scheduled for removal.'
  *  4: 'Currently being removed.'
@@ -32,10 +32,10 @@ Settings::initialize(dirname(dirname(__DIR__)), DrupalKernel::findSitePath($requ
 $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod')->boot();
 
 //unl_edit_sites();
-//unl_remove_aliases();
+unl_remove_aliases();
 unl_remove_sites();
 unl_add_sites();
-//unl_add_aliases();
+unl_add_aliases();
 
 function unl_add_sites() {
   $query = db_query('SELECT * FROM {unl_sites} WHERE installed=0');
@@ -125,7 +125,7 @@ function unl_edit_sites() {
         ->execute()
         ->fetchAll();
       foreach ($existingAliases as $existingAlias) {
-          unl_remove_alias($existingAlias->base_uri, $existingAlias->path, $existingAlias->site_alias_id);
+          unl_remove_alias($existingAlias->site_alias_id);
           unl_add_alias($new_uri, $existingAlias->base_uri, $existingAlias->path, $existingAlias->site_alias_id);
       }
 
@@ -197,7 +197,7 @@ function unl_remove_aliases() {
       ->condition('site_alias_id', $row->site_alias_id)
       ->execute();
     try {
-      unl_remove_alias($row->base_uri, $row->path, $row->site_alias_id);
+      unl_remove_alias($row->site_alias_id);
       db_delete('unl_sites_aliases')
         ->condition('site_alias_id', $row->site_alias_id)
         ->execute();
@@ -295,17 +295,14 @@ function unl_add_alias($site_uri, $base_uri, $path, $alias_id) {
   $alias_config_dir = unl_get_sites_subdir($alias_uri, FALSE);
 
   unl_add_alias_to_sites_php($alias_config_dir, $real_config_dir, $alias_id);
+  if ($path) {
+    unl_add_site_to_htaccess($alias_id, $path, TRUE);
+  }
 }
 
-function unl_remove_alias($base_uri, $path, $alias_id) {
-  $alias_uri = $base_uri . $path;
-  $alias_config_dir = unl_get_sites_subdir($alias_uri, FALSE);
-  /* TODO: Remove the next line once all sites have been converted
-   *       to the new method of creating aliases.
-   */
-  unlink(\Drupal::root() . '/sites/' . $alias_config_dir);
-
+function unl_remove_alias($alias_id) {
   unl_remove_alias_from_sites_php($alias_id);
+  unl_remove_site_from_htaccess($alias_id, TRUE);
 }
 
 function unl_add_alias_to_sites_php($alias_site_dir, $real_site_dir, $alias_id) {

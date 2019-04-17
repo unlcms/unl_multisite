@@ -73,9 +73,13 @@ class UnlMultisiteList extends FormBase {
           'data' => array(
             '#type' => 'operations',
             '#links' => array(
+              'aliases_create' => array(
+                'title' => t('create alias'),
+                'url' => Url::fromRoute('unl_multisite.site_aliases_create', ['site_id' => $site->site_id]),
+              ),
               'aliases' => array(
-                'title' => t('edit aliases'),
-                'url' => Url::fromRoute('unl_multisite.site_list', array()),//'admin/sites/unl/' . $site->site_id . '/aliases',
+                'title' => t('view aliases'),
+                'url' => Url::fromRoute('unl_multisite.site_aliases', ['site_id' => $site->site_id]),
               ),
               'edit' => array(
                 'title' => t('edit site'),
@@ -235,13 +239,13 @@ class UnlMultisiteList extends FormBase {
     return $rows;
   }
 
-  function _unl_get_install_status_text($id) {
+  public static function _unl_get_install_status_text($id) {
     switch ($id) {
       case 0:
         $installed = t('Scheduled for creation.');
         break;
       case 1:
-        $installed = t('Curently being created.');
+        $installed = t('Currently being created.');
         break;
       case 2:
         $installed = t('In production.');
