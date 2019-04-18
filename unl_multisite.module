@@ -69,6 +69,16 @@ function unl_multisite_permission() {
 }
 
 /**
+ * Implements hook_element_info_alter().
+ */
+function unl_multisite_element_info_alter(array &$types) {
+  // Attach our extra CSS for toolbar icons.
+  if (isset($types['toolbar'])) {
+    $types['toolbar']['#attached']['library'][] = 'unl_multisite/toolbar';
+  }
+}
+
+/**
  * Implementation of hook_theme().
  */
 //function unl_multisite_theme() {
