@@ -43,19 +43,17 @@ class UnlMultisiteList extends FormBase {
     );
 
     $sites = db_select('unl_sites', 's')
-      ->fields('s', array('site_id', 'installed', 'site_path'))
+      ->fields('s', array('site_id', 'site_path', 'uri', 'installed'))
       ->execute()
       ->fetchAll();
 
     // In addition to the above db query, add site name and last access timestamp
-    //$this->unl_add_extra_site_info($sites);
-
+    $this->unl_add_extra_site_info($sites);
 
     $form['unl_sites'] = array(
       '#caption' => t('Existing Sites: ') . count($sites),
       '#type' => 'table',
       '#header' => $header,
-      //'#rows' => $rows,
       '#empty' => t('No sites have been created.'),
     );
 
@@ -133,59 +131,48 @@ class UnlMultisiteList extends FormBase {
    * Adds virtual name and access fields to a result set from the unl_sites table.
    * @param $sites The result of db_select()->fetchAll() on the unl_sites table.
    */
-  function unl_add_extra_site_info($sites) {
+  function unl_add_extra_site_info(&$sites) {
     // Get all custom made roles (roles other than authenticated, anonymous, administrator)
     $roles = user_roles(TRUE);
-    unset($roles[\Drupal\Core\Session\AccountInterface::AUTHENTICATED_RID]);
-    // @FIXME
-// // @FIXME
-// // This looks like another module's variable. You'll need to rewrite this call
-// // to ensure that it uses the correct configuration object.
-// unset($roles[variable_get('user_admin_role')]);
+    unset($roles[\Drupal\Core\Session\AccountInterface::AUTHENTICATED_ROLE]);
+    unset($roles['administrator']);
 
-
-    // Setup alternate db connection so we can query other sites' tables without a prefix being attached
-    $database_noprefix = array(
-      'database' => $GLOBALS['databases']['default']['default']['database'],
-      'username' => $GLOBALS['databases']['default']['default']['username'],
-      'password' => $GLOBALS['databases']['default']['default']['password'],
-      'host' => $GLOBALS['databases']['default']['default']['host'],
-      'port' => $GLOBALS['databases']['default']['default']['port'],
-      'driver' => $GLOBALS['databases']['default']['default']['driver'],
-    );
-    Database::addConnectionInfo('UNLNoPrefix', 'default', $database_noprefix);
-
-    // The master prefix that was specified during initial drupal install
-    $master_prefix = $GLOBALS['databases']['default']['default']['prefix'];
-
-    foreach ($sites as $row) {
+    foreach ($sites as &$row) {
       // Skip over any sites that aren't properly installed.
       if (!in_array($row->installed, array(2, 6))) {
         continue;
       }
 
-      // Switch to alt db connection
-      db_set_active('UNLNoPrefix');
-
-      // Get site name
-      $table = $row->db_prefix.'_'.$master_prefix.'variable';
-      $name = db_query("SELECT value FROM ".$table." WHERE name = 'site_name'")->fetchField();
+      // getenv('HOME') seems to be unset in some configurations when running drush
+      // via shell_exec(). This cause Webmozart\PathUtil\Path\getHomeDirectory() to fail.
+      // Set a value here to force it to work.
+      putenv("HOME=".DRUPAL_ROOT);
+      $command = DRUPAL_ROOT . "/../vendor/drush/drush/drush -y --uri={$row->uri} config:get system.site name --format";
+      $name = shell_exec($command);
+      if (stripos($name, 'Drush command terminated abnormally') !== FALSE) {
+        throw new Exception('Error while fetching site names.');
+      }
 
       // Get last access timestamp (by a non-administrator)
-      $table_users = $row->db_prefix.'_'.$master_prefix.'users u';
-      $table_users_roles = $row->db_prefix.'_'.$master_prefix.'users_roles r';
       if (!empty($roles)) {
-        $access = db_query('SELECT u.access FROM '.$table_users.', '.$table_users_roles.' WHERE u.uid = r.uid AND u.access > 0 AND r.rid IN (' . implode(',', array_keys($roles)) . ') ORDER BY u.access DESC')->fetchColumn();
+        // Same as the problem above. This isn't the best way to run drush from a module.
+        $path = getenv('PATH');
+        putenv("PATH={$path}:/usr/local/mysql/bin");
+
+        $table_users = 'users_field_data u';
+        $table_users_roles = 'user__roles r';
+        $query = 'SELECT u.access FROM '.$table_users.', '.$table_users_roles.' WHERE u.uid = r.entity_id AND u.access > 0 AND r.roles_target_id IN (' . "'".implode("','", array_keys($roles))."'" . ') ORDER BY u.access DESC';
+        $command = DRUPAL_ROOT . "/../vendor/drush/drush/drush -y --uri={$row->uri} sql:query \"{$query}\"";
+        $access = shell_exec($command);
+        if (stripos($access, 'Drush command terminated abnormally') !== FALSE) {
+          throw new Exception('Error while fetching access times.');
+        }
       }
       else {
         $access = 0;
       }
 
-      // Restore default db connection
-      db_set_active();
-
-      // Update unl_sites table of the default site
-      $row->name = @unserialize($name);
+      $row->name = $name;
       $row->access = (int)$access;
     }
   }

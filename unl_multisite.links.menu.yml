@@ -1,6 +1,6 @@
 system.admin_unl_multisite:
   title: 'Multisite management'
-  description: 'Find and manage groups, group types and group settings.'
+  description: 'Manage site installations.'
   route_name: 'unl_multisite.site_list'
   parent: 'system.admin'
   weight: -25
