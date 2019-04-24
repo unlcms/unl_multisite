@@ -1,23 +1,26 @@
 Installation
 
-1.
-Insert the following line into index.php after $request is initialized:
-require_once './modules/contrib/unl_multisite/bootstrap.inc';
+1. Insert the following line into index.php after $request is initialized:
+
+`require_once './modules/contrib/unl_multisite/bootstrap.inc';`
 
 
 Your index.php file should look like:
-
+```
 $request = Request::createFromGlobals();
 require_once './modules/contrib/unl_multisite/bootstrap.inc';
 $response = $kernel->handle($request);
+```
 
+2. Copy .htaccess-subsite-map.txt.sample to the web root and rename to .htaccess-subsite-map.txt
 
-2.
-Copy .htaccess-subsite-map.txt.sample to the web root and rename to .htaccess-subsite-map.txt
+3. Set $config_directories in sites/default/settings.php
 
+```
+$config_directories["sync"] = "../config/sync";
+```
 
-3.
-Copy sites/example.sites.php to sites/sites.php and add this to the end of the file:
+4. Copy sites/example.sites.php to sites/sites.php and add this to the end of the file:
 
 ```
   /**
@@ -32,8 +35,7 @@ Copy sites/example.sites.php to sites/sites.php and add this to the end of the f
 ```
 
 
-4.
-Add this to .htaccess at the web root (inside the <IfModule mod_rewrite.c> </IfModule> block).
+5. Add this to .htaccess at the web root (inside the <IfModule mod_rewrite.c> </IfModule> block).
 
 ```
   # START unl_multisite SECTION
@@ -50,13 +52,11 @@ Add this to .htaccess at the web root (inside the <IfModule mod_rewrite.c> </IfM
 ```
 
 
-5.
-Add the following line to your Apache's configuration file (httpd.conf) where <DRUPAL_ROOT> is the file system path to the Drupal web root. Restart Apache afterward.
+6. Add the following line to your Apache's configuration file (httpd.conf) where <DRUPAL_ROOT> is the file system path to the Drupal web root. Restart Apache afterward.
 
 ```
   RewriteMap drupal_unl_multisite txt:<DRUPAL_ROOT>/.htaccess-subsite-map.txt
 ```
 
 
-6.
-Set up a cron job on the server to execute unl_multisite/cron.php on a regular basis.
+7. Set up a cron job on the server to execute unl_multisite/cron.php on a regular basis.
