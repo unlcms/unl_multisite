@@ -230,7 +230,7 @@ function unl_add_site($site_path, $uri, $site_id) {
     . ':'   . $database['password']
     . '@'   . $database['host']
     . ($database['port'] ? ':' . $database['port'] : '')
-    . '/unlcms'   . $site_id
+    . '/project-herbie-'   . $site_id
   ;
 
   // Drush 8 doesn't like single quotes around option values so escapeshellarg doesn't work.
@@ -274,7 +274,7 @@ function unl_remove_site($site_path, $uri, $site_id) {
   // Drop all the tables in the database.
   $connection_info = Database::getConnectionInfo();
   $database = $connection_info['default'];
-  $database['database'] = 'unlcms' . $site_id;
+  $database['database'] = 'project-herbie-' . $site_id;
   $command = "mysqladmin -h {$database['host']} -u {$database['username']} -p{$database['password']} -f drop {$database['database']} 2>&1";
   $result = shell_exec($command);
   echo $result;
