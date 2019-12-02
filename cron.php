@@ -220,7 +220,7 @@ function unl_add_site($site_path, $uri, $site_id) {
   }
 
   $sites_subdir = unl_get_sites_subdir($uri);
-  
+
   //Create a fresh site
   $connection_info = Database::getConnectionInfo();
   $database = $connection_info['default'];
@@ -239,8 +239,20 @@ function unl_add_site($site_path, $uri, $site_id) {
   $sites_subdir = escapeshellcmd($sites_subdir);
   $db_url = escapeshellcmd($db_url);
 
-  $command = "drush -y --uri=$uri site-install --existing-config --sites-subdir=$sites_subdir --db-url=$db_url 2>&1";
+  // Drush site-install can't create a database with special characters, like
+  // hyphens, because it doesn't quote the name. However, it does quote the name
+  // with the "sql:create" command. Creating and then installing in two steps
+  // is a workaround until the following issue is addressed:
+  // https://github.com/drush-ops/drush/issues/4203
+  $command = "drush -y sql:create --db-url=$db_url 2>&1";
+  $result = shell_exec($command);
+  echo $result;
+  if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
+    throw new Exception('Error while running drush sql:create.');
+  }
 
+  // Site installation.
+  $command = "drush -y --uri=$uri site-install --existing-config --sites-subdir=$sites_subdir --db-url=$db_url 2>&1";
   // Running the command twice as a hack. First time sets up the site directory but installation stops.
   // Second runs completes it.
   $result = shell_exec($command);
