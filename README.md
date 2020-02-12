@@ -14,10 +14,10 @@ $response = $kernel->handle($request);
 
 2. Copy .htaccess-subsite-map.txt.sample to the web root and rename to .htaccess-subsite-map.txt
 
-3. Set $config_directories in sites/default/settings.php
+3. Set the location of your config directory in sites/default/settings.php - [See Drupal.org for help](https://www.drupal.org/docs/8/configuration-management/changing-the-storage-location-of-the-sync-directory)
 
 ```
-$config_directories["sync"] = "../config/sync";
+$settings['config_sync_directory'] = '../config/sync';
 ```
 
 4. Copy sites/example.sites.php to sites/sites.php and add this to the end of the file:
