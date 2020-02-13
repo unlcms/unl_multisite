@@ -235,6 +235,7 @@ function unl_add_site($site_path, $uri, $site_id) {
 
   // Drush 8 doesn't like single quotes around option values so escapeshellarg doesn't work.
   $php_path = escapeshellarg($_SERVER['_']);
+  $drush_path = dirname(DRUPAL_ROOT) . '/vendor/drush/drush/drush';
   $uri = escapeshellcmd($uri);
   $sites_subdir = escapeshellcmd($sites_subdir);
   $db_url = escapeshellcmd($db_url);
@@ -244,7 +245,7 @@ function unl_add_site($site_path, $uri, $site_id) {
   // with the "sql:create" command. Creating and then installing in two steps
   // is a workaround until the following issue is addressed:
   // https://github.com/drush-ops/drush/issues/4203
-  $command = "drush -y sql:create --db-url=$db_url 2>&1";
+  $command = "$drush_path -y sql:create --db-url=$db_url 2>&1";
   $result = shell_exec($command);
   echo $result;
   if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
@@ -252,7 +253,7 @@ function unl_add_site($site_path, $uri, $site_id) {
   }
 
   // Site installation.
-  $command = "drush -y --uri=$uri site-install --existing-config --sites-subdir=$sites_subdir --db-url=$db_url 2>&1";
+  $command = "$drush_path -y --uri=$uri site-install --existing-config --sites-subdir=$sites_subdir --db-url=$db_url 2>&1";
   // Running the command twice as a hack. First time sets up the site directory but installation stops.
   // Second runs completes it.
   $result = shell_exec($command);
