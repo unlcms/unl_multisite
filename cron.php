@@ -332,6 +332,9 @@ function unl_remove_site($site_path, $uri, $site_id) {
   shell_exec('chmod -R u+w ' . escapeshellarg($sites_subdir));
   shell_exec('rm -rf ' . escapeshellarg($sites_subdir));
 
+  // Remove the rewrite rules from .htaccess for this site.
+  unl_remove_site_from_htaccess($site_id, FALSE);
+
   // If we were using memcache, flush its cache so new sites don't have stale data.
   if (class_exists('MemCacheDrupal', FALSE)) {
     dmemcache_flush();
