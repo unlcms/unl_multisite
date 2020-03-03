@@ -60,3 +60,6 @@ $settings['config_sync_directory'] = '../config/sync';
 
 
 7. Set up a cron job on the server to execute unl_multisite/cron.php on a regular basis.
+
+
+8. Ensure the MYSQL database user for the default site has privileges to create new databases.
