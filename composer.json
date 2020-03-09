@@ -8,5 +8,8 @@
       "homepage": "https://www.drupal.org/u/ericras",
       "role": "Maintainer"
     }
-  ]
+  ],
+  "require": {
+    "richardbporter/drush-users-commands": "^2.0"
+  }
 }

@@ -268,6 +268,30 @@ function unl_add_site($site_path, $uri, $site_id) {
   }
 
   unl_add_site_to_htaccess($site_id, $site_path, FALSE);
+
+  // Add the default site's administrators to the new site.
+  $command = "$drush_path users:list --roles=administrator --format=php --fields=name,mail 2>&1";
+  $result = shell_exec($command);
+  echo $result;
+  if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
+    throw new Exception('Error while running drush users:list.');
+  }
+  foreach(unserialize($result) as $admin) {
+    $name = $admin['name'];
+    $mail = $admin['mail'];
+    $command = "$drush_path --uri=$uri user:create $name --mail='$mail'";
+    $result = shell_exec($command);
+    echo $result;
+    if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
+      throw new Exception('Error while running drush user:create.');
+    }
+    $command = "$drush_path --uri=$uri user:role:add 'administrator' $name";
+    $result = shell_exec($command);
+    echo $result;
+    if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
+      throw new Exception('Error while running drush user:role:add.');
+    }
+  }
 }
 
 function unl_remove_site($site_path, $uri, $site_id) {
