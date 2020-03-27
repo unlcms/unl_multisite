@@ -269,6 +269,18 @@ function unl_add_site($site_path, $uri, $site_id) {
 
   unl_add_site_to_htaccess($site_id, $site_path, FALSE);
 
+  // Set files directory permissions on the new site.
+  // @todo Change owner to the Apache user instead.
+  $command = "$drush_path --uri=$uri drupal-directory files 2>&1";
+  $result = shell_exec($command);
+  echo $result;
+  if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
+    throw new Exception('Error while running drush drupal-directory.');
+  }
+  $command = "chmod -R 777 $result 2>&1";
+  $result = shell_exec($command);
+  echo $result;
+
   // Add the default site's administrators to the new site.
   $command = "$drush_path users:list --roles=administrator --format=php --fields=name,mail 2>&1";
   $result = shell_exec($command);
@@ -319,6 +331,9 @@ function unl_remove_site($site_path, $uri, $site_id) {
   // Do our best to remove the sites
   shell_exec('chmod -R u+w ' . escapeshellarg($sites_subdir));
   shell_exec('rm -rf ' . escapeshellarg($sites_subdir));
+
+  // Remove the rewrite rules from .htaccess for this site.
+  unl_remove_site_from_htaccess($site_id, FALSE);
 
   // If we were using memcache, flush its cache so new sites don't have stale data.
   if (class_exists('MemCacheDrupal', FALSE)) {
