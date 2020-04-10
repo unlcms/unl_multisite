@@ -2,11 +2,52 @@
 
 namespace Drupal\unl_multisite\Form;
 
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Database\Query\Condition;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class UnlMultisiteAliasesCreate extends FormBase {
+
+  /**
+   * Base database API.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $databaseConnection;
+
+  /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\Messenger
+   */
+  protected $messenger;
+
+  /**
+   * Class constructor for form object.
+   *
+   * @param \Drupal\Core\Database\Connection $database_connection
+   *   Base database API.
+   * @param \Drupal\Core\Messenger\Messenger $messenger
+   *   The messenger service.
+   */
+  public function __construct(Connection $database_connection, Messenger $messenger) {
+    $this->databaseConnection = $database_connection;
+    $this->messenger = $messenger;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('database'),
+      $container->get('messenger')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -19,7 +60,7 @@ class UnlMultisiteAliasesCreate extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $site_id = NULL) {
-    $query = db_select('unl_sites', 's')
+    $query = $this->databaseConnection->select('unl_sites', 's')
       ->fields('s', array('site_id', 'site_path'))
       ->orderBy('uri');
     if (isset($site_id)) {
@@ -76,16 +117,16 @@ class UnlMultisiteAliasesCreate extends FormBase {
     }
 
     // Check that the alias does not already exist.
-    $query = db_select('unl_sites_aliases', 'a');
+    $query = $this->databaseConnection->select('unl_sites_aliases', 'a');
     $query->fields('a', array('base_uri', 'path'));
 
-    $db_or = db_or();
+    $db_or = new Condition('OR');
     $db_or->condition('a.path', $form_state->getValue('path'), '=');
 
     // Also consider legacy aliases that do not have a trailing slash.
     $db_or->condition('a.path', substr($form_state->getValue('path'), 0, -1), '=');
 
-    $db_and = db_and();
+    $db_and = new Condition('AND');
     $db_and->condition('a.base_uri', $form_state->getValue('base_uri'), '=');
     $db_and->condition($db_or);
 
@@ -103,13 +144,13 @@ class UnlMultisiteAliasesCreate extends FormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    db_insert('unl_sites_aliases')->fields(array(
+    $this->databaseConnection->insert('unl_sites_aliases')->fields(array(
       'site_id' => $form_state->getValue('site'),
       'base_uri' => $form_state->getValue('base_uri'),
       'path' => $form_state->getValue('path'),
     ))->execute();
 
-    drupal_set_message(t('The site alias has been scheduled for creation. Run unl_multisite/cron.php to finish creation.'));
+    $this->messenger->addStatus(t('The site alias has been scheduled for creation. Run unl_multisite/cron.php to finish creation.'));
   }
 
 }

@@ -2,14 +2,55 @@
 
 namespace Drupal\unl_multisite\Form;
 
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\Core\Utility\TableSort;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Configure book settings for this site.
  */
 class UnlMultisiteList extends FormBase {
+
+  /**
+   * Base database API.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $databaseConnection;
+
+  /**
+   * Request represents an HTTP request.
+   *
+   * @var \Symfony\Component\HttpFoundation\Request
+   */
+  protected $request;
+
+  /**
+   * Class constructor for form object.
+   *
+   * @param \Drupal\Core\Database\Connection $database_connection
+   *   Base database API.
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request
+   *   Request stack that controls the lifecycle of requests.
+   */
+  public function __construct(Connection $database_connection, RequestStack $request) {
+    $this->databaseConnection = $database_connection;
+    $this->request = $request->getCurrentRequest();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('database'),
+      $container->get('request_stack')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -42,7 +83,7 @@ class UnlMultisiteList extends FormBase {
       'operations' => t('Operations'),
     );
 
-    $sites = db_select('unl_sites', 's')
+    $sites = $this->databaseConnection->select('unl_sites', 's')
       ->fields('s', array('site_id', 'site_path', 'uri', 'installed'))
       ->execute()
       ->fetchAll();
@@ -94,8 +135,8 @@ class UnlMultisiteList extends FormBase {
     }
 
     // Sort the table data accordingly with a custom sort function
-    $order = tablesort_get_order($header);
-    $sort = tablesort_get_sort($header);
+    $order = TableSort::getOrder($header, $this->request);
+    $sort = TableSort::getOrder($header, $this->request);
     $rows = $this->unl_sites_sort($rows, $order, $sort);
 
     // Now that the access timestamp has been used to sort, convert it to something readable
@@ -129,7 +170,7 @@ class UnlMultisiteList extends FormBase {
 
   /**
    * Adds virtual name and access fields to a result set from the unl_sites table.
-   * @param $sites The result of db_select()->fetchAll() on the unl_sites table.
+   * @param $sites The result of $this->databaseConnection->select()->fetchAll() on the unl_sites table.
    */
   function unl_add_extra_site_info(&$sites) {
     // Get all custom made roles (roles other than authenticated, anonymous, administrator)

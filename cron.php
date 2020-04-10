@@ -38,22 +38,24 @@ unl_add_sites();
 unl_add_aliases();
 
 function unl_add_sites() {
-  $query = db_query('SELECT * FROM {unl_sites} WHERE installed=0');
+  $database_connection = \Drupal::service('database');
+
+  $query = $database_connection->query('SELECT * FROM {unl_sites} WHERE installed=0');
 
   while ($row = $query->fetchAssoc()) {
-    db_update('unl_sites')
+    $database_connection->update('unl_sites')
       ->fields(array('installed' => 1))
       ->condition('site_id', $row['site_id'])
       ->execute();
     try {
       unl_add_site($row['site_path'], $row['uri'], $row['site_id']);
-      db_update('unl_sites')
+      $database_connection->update('unl_sites')
         ->fields(array('installed' => 2))
         ->condition('site_id', $row['site_id'])
         ->execute();
     } catch (Exception $e) {
       \Drupal::logger('unl cron')->error($e->getMessage(), array());
-      db_update('unl_sites')
+      $database_connection->update('unl_sites')
         ->fields(array('installed' => 5))
         ->condition('site_id', $row['site_id'])
         ->execute();
@@ -62,20 +64,22 @@ function unl_add_sites() {
 }
 
 function unl_remove_sites() {
-  $query = db_query('SELECT * FROM {unl_sites} WHERE installed=3');
+  $database_connection = \Drupal::service('database');
+
+  $query = $database_connection->query('SELECT * FROM {unl_sites} WHERE installed=3');
   while ($row = $query->fetchAssoc()) {
-    db_update('unl_sites')
+    $database_connection->update('unl_sites')
       ->fields(array('installed' => 4))
       ->condition('site_id', $row['site_id'])
       ->execute();
     try {
       unl_remove_site($row['site_path'], $row['uri'], $row['site_id']);
-      db_delete('unl_sites')
+      $database_connection->delete('unl_sites')
         ->condition('site_id', $row['site_id'])
         ->execute();
     } catch (Exception $e) {
       \Drupal::logger('unl cron')->error($e->getMessage(), array());
-      db_update('unl_sites')
+      $database_connection->update('unl_sites')
         ->fields(array('installed' => 5))
         ->condition('site_id', $row['site_id'])
         ->execute();
@@ -84,22 +88,24 @@ function unl_remove_sites() {
 }
 
 function unl_edit_sites() {
-  $query = db_query('SELECT * FROM {unl_sites} WHERE installed=6');
+  $database_connection = \Drupal::service('database');
+
+  $query = $database_connection->query('SELECT * FROM {unl_sites} WHERE installed=6');
   while ($row = $query->fetchAssoc()) {
     try {
-      $alias = db_select('unl_sites_aliases')
+      $alias = $database_connection->select('unl_sites_aliases')
         ->fields('unl_sites_aliases', array('site_alias_id', 'site_id', 'base_uri', 'path'))
         ->condition('installed', 6)
         ->condition('site_id', $row['site_id'])
         ->execute()
         ->fetchAssoc();
 
-      db_update('unl_sites')
+      $database_connection->update('unl_sites')
         ->fields(array('site_path' => $alias['path']))
         ->condition('site_id', $row['site_id'])
         ->execute();
 
-      db_update('unl_sites_aliases')
+      $database_connection->update('unl_sites_aliases')
         ->fields(array('path' => $row['site_path']))
         ->condition('site_id', $row['site_id'])
         ->condition('installed', 6)
@@ -118,7 +124,7 @@ function unl_edit_sites() {
       shell_exec($command);
 
       // Recreate all existing aliases so that they point to the new URI.
-      $existingAliases = db_select('unl_sites_aliases', 'a')
+      $existingAliases = $database_connection->select('unl_sites_aliases', 'a')
         ->condition('site_id', $row['site_id'])
         ->condition('installed', 2)
         ->fields('a', array('site_alias_id', 'base_uri', 'path'))
@@ -132,22 +138,22 @@ function unl_edit_sites() {
       // Add the old location as a new alias.
       unl_add_alias($new_uri, $alias['base_uri'], $row['site_path'], $alias['site_alias_id']);
 
-      db_update('unl_sites')
+      $database_connection->update('unl_sites')
         ->fields(array('installed' => 2))
         ->condition('site_id', $row['site_id'])
         ->execute();
-      db_update('unl_sites_aliases')
+      $database_connection->update('unl_sites_aliases')
         ->fields(array('installed' => 2))
         ->condition('site_id', $row['site_id'])
         ->condition('installed', 6)
         ->execute();
     } catch (Exception $e) {
       \Drupal::logger('unl cron')->error($e->getMessage(), array());
-      db_update('unl_sites')
+      $database_connection->update('unl_sites')
         ->fields(array('installed' => 5))
         ->condition('site_id', $row['site_id'])
         ->execute();
-      db_update('unl_sites_aliases')
+      $database_connection->update('unl_sites_aliases')
         ->fields(array('installed' => 5))
         ->condition('site_id', $row['site_id'])
         ->condition('installed', 6)
@@ -157,7 +163,9 @@ function unl_edit_sites() {
 }
 
 function unl_add_aliases() {
-  $query = db_select('unl_sites_aliases', 'a');
+  $database_connection = \Drupal::service('database');
+
+  $query = $database_connection->select('unl_sites_aliases', 'a');
   $query->join('unl_sites', 's', 's.site_id = a.site_id');
   $query->fields('s', array('uri'));
   $query->fields('a', array('site_alias_id', 'base_uri', 'path'));
@@ -165,19 +173,19 @@ function unl_add_aliases() {
   $results = $query->execute()->fetchAll();
 
   foreach ($results as $row) {
-    db_update('unl_sites_aliases')
+    $database_connection->update('unl_sites_aliases')
       ->fields(array('installed' => 1))
       ->condition('site_alias_id', $row->site_alias_id)
       ->execute();
     try {
       unl_add_alias($row->uri, $row->base_uri, $row->path, $row->site_alias_id);
-      db_update('unl_sites_aliases')
+      $database_connection->update('unl_sites_aliases')
         ->fields(array('installed' => 2))
         ->condition('site_alias_id', $row->site_alias_id)
         ->execute();
     } catch (Exception $e) {
       \Drupal::logger('unl cron')->error($e->getMessage(), array());
-      db_update('unl_sites_aliases')
+      $database_connection->update('unl_sites_aliases')
         ->fields(array('installed' => 5))
         ->condition('site_alias_id', $row->site_alias_id)
         ->execute();
@@ -186,24 +194,26 @@ function unl_add_aliases() {
 }
 
 function unl_remove_aliases() {
-  $query = db_select('unl_sites_aliases', 'a');
+  $database_connection = \Drupal::service('database');
+
+  $query = $database_connection->select('unl_sites_aliases', 'a');
   $query->fields('a', array('site_alias_id', 'base_uri', 'path'));
   $query->condition('a.installed', 3);
   $results = $query->execute()->fetchAll();
 
   foreach ($results as $row) {
-    db_update('unl_sites_aliases')
+    $database_connection->update('unl_sites_aliases')
       ->fields(array('installed' => 4))
       ->condition('site_alias_id', $row->site_alias_id)
       ->execute();
     try {
       unl_remove_alias($row->site_alias_id);
-      db_delete('unl_sites_aliases')
+      $database_connection->delete('unl_sites_aliases')
         ->condition('site_alias_id', $row->site_alias_id)
         ->execute();
     } catch (Exception $e) {
       \Drupal::logger('unl cron')->error($e->getMessage(), array());
-      db_update('unl_sites_aliases')
+      $database_connection->update('unl_sites_aliases')
         ->fields(array('installed' => 5))
         ->condition('site_alias_id', $row->site_alias_id)
         ->execute();
