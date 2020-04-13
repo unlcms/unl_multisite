@@ -2,14 +2,54 @@
 
 namespace Drupal\unl_multisite\Form;
 
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Configure book settings for this site.
  */
 class UnlMultisiteAdd extends FormBase {
+
+  /**
+   * Base database API.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $databaseConnection;
+
+  /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\Messenger
+   */
+  protected $messenger;
+
+  /**
+   * Class constructor for form object.
+   *
+   * @param \Drupal\Core\Database\Connection $database_connection
+   *   Base database API.
+   * @param \Drupal\Core\Messenger\Messenger $messenger
+   *   The messenger service.
+   */
+  public function __construct(Connection $database_connection, Messenger $messenger) {
+    $this->databaseConnection = $database_connection;
+    $this->messenger = $messenger;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('database'),
+      $container->get('messenger')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -65,14 +105,14 @@ class UnlMultisiteAdd extends FormBase {
 
     $uri = Url::fromUserInput('/'.$site_path, array('absolute' => TRUE, 'https' => FALSE))->toString();
 
-    $id = db_insert('unl_sites')
+    $id = $this->databaseConnection->insert('unl_sites')
       ->fields(array(
         'site_path' => $site_path,
         'uri' => $uri,
       ))
       ->execute();
 
-    drupal_set_message(t('The site @uri has been scheduled for creation. Run unl_multisite/cron.php to finish install.', array('@uri' => $uri)));
+    $this->messenger->addStatus(t('The site @uri has been scheduled for creation. Run unl_multisite/cron.php to finish install.', array('@uri' => $uri)));
 
     $url = \Drupal\Core\Url::fromRoute('unl_multisite.site_list');
     return $form_state->setRedirectUrl($url);
@@ -107,13 +147,13 @@ class UnlMultisiteAdd extends FormBase {
       }
     }
 
-    $site = db_select('unl_sites', 's')
+    $site = $this->databaseConnection->select('unl_sites', 's')
       ->fields('s', array('site_path'))
       ->condition('site_path', $site_path)
       ->execute()
       ->fetch();
 
-    $alias = db_select('unl_sites_aliases', 'a')
+    $alias = $this->databaseConnection->select('unl_sites_aliases', 'a')
       ->fields('a', array('path'))
       ->condition('path', $site_path)
       ->execute()

@@ -2,11 +2,51 @@
 
 namespace Drupal\unl_multisite\Form;
 
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class UnlMultisiteAliases extends FormBase {
+
+  /**
+   * Base database API.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $databaseConnection;
+
+  /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\Messenger
+   */
+  protected $messenger;
+
+  /**
+   * Class constructor for form object.
+   *
+   * @param \Drupal\Core\Database\Connection $database_connection
+   *   Base database API.
+   * @param \Drupal\Core\Messenger\Messenger $messenger
+   *   The messenger service.
+   */
+  public function __construct(Connection $database_connection, Messenger $messenger) {
+    $this->databaseConnection = $database_connection;
+    $this->messenger = $messenger;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('database'),
+      $container->get('messenger')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -35,7 +75,7 @@ class UnlMultisiteAliases extends FormBase {
       'remove' => t('Remove'),
     );
 
-    $query = db_select('unl_sites_aliases', 'a')
+    $query = $this->databaseConnection->select('unl_sites_aliases', 'a')
       ->extend('Drupal\Core\Database\Query\TableSortExtender')
       ->orderByHeader($header);
     $query->join('unl_sites', 's', 's.site_id = a.site_id');
@@ -92,7 +132,7 @@ class UnlMultisiteAliases extends FormBase {
       }
     }
 
-    $query = db_select('unl_sites_aliases', 'a');
+    $query = $this->databaseConnection->select('unl_sites_aliases', 'a');
     $query->join('unl_sites', 's', 'a.site_id = s.site_id');
     $data = $query
       ->fields('a', array('site_alias_id', 'base_uri', 'path'))
@@ -104,10 +144,10 @@ class UnlMultisiteAliases extends FormBase {
     foreach ($data as $row) {
       $alias_url = $row->base_uri . $row->path;
       $site_alias_ids[] = $row->site_alias_id;
-      drupal_set_message("The alias $alias_url was scheduled for removal.");
+      $this->messenger->addStatus("The alias $alias_url was scheduled for removal.");
     }
 
-    db_update('unl_sites_aliases')
+    $this->databaseConnection->update('unl_sites_aliases')
       ->fields(array('installed' => 3))
       ->condition('site_alias_id', $site_alias_ids, 'IN')
       ->execute();

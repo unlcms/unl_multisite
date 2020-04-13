@@ -2,15 +2,55 @@
 
 namespace Drupal\unl_multisite\Form;
 
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\ConfirmFormHelper;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Url;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Site deletion confirmation.
  */
 class UnlMultisiteDelete extends ConfirmFormBase {
+
+  /**
+   * Base database API.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $databaseConnection;
+
+  /**
+   * The messenger service.
+   *
+   * @var \Drupal\Core\Messenger\Messenger
+   */
+  protected $messenger;
+
+  /**
+   * Class constructor for form object.
+   *
+   * @param \Drupal\Core\Database\Connection $database_connection
+   *   Base database API.
+   * @param \Drupal\Core\Messenger\Messenger $messenger
+   *   The messenger service.
+   */
+  public function __construct(Connection $database_connection, Messenger $messenger) {
+    $this->databaseConnection = $database_connection;
+    $this->messenger = $messenger;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('database'),
+      $container->get('messenger')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -65,7 +105,7 @@ class UnlMultisiteDelete extends ConfirmFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $site_id = NULL) {
-    $site_path = db_select('unl_sites', 's')
+    $site_path = $this->databaseConnection->select('unl_sites', 's')
       ->fields('s', array('site_path'))
       ->condition('site_id', $site_id)
       ->execute()
@@ -109,16 +149,16 @@ class UnlMultisiteDelete extends ConfirmFormBase {
       return;
     }
     $this->flagSiteToRemove($values['site_id']);
-    drupal_set_message(t('The site has been scheduled for removal.'));
+    $this->messenger->addStatus(t('The site has been scheduled for removal.'));
     $form_state->setRedirect('unl_multisite.site_list');
   }
 
   private function flagSiteToRemove($site_id) {
-    db_update('unl_sites')
+    $this->databaseConnection->update('unl_sites')
       ->fields(array('installed' => 3))
       ->condition('site_id', $site_id)
       ->execute();
-    db_update('unl_sites_aliases')
+    $this->databaseConnection->update('unl_sites_aliases')
       ->fields(array('installed' => 3))
       ->condition('site_id', $site_id)
       ->execute();
