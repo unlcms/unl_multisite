@@ -11,6 +11,6 @@
   ],
   "require": {
     "drupal/core": "^8 || ^9",
-    "richardbporter/drush-users-commands": "^2.0"
+    "richardbporter/drush-users-commands": "^3.1"
   }
 }
