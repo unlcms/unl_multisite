@@ -1,4 +1,8 @@
-Installation
+# UNL Multisite Module for Drupal 9
+
+Provides a web interface to run a [Drupal multisite](https://www.drupal.org/docs/multisite-drupal) setup so additional sites can exist in subdirectories such as http://example.unl.edu/site2.
+
+## Installation
 
 1. Insert the following line into index.php after $request is initialized:
 
@@ -63,3 +67,8 @@ $settings['config_sync_directory'] = '../config/sync';
 
 
 8. Ensure the MYSQL database user for the default site has privileges to create new databases.
+
+## Troubleshooting
+
+- Drush and MariaDB 10.7+ don't work with a database port set if the host is localhost. If you are using localhost for the host, clear the port setting in settings.php.
+
