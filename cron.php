@@ -263,13 +263,6 @@ function unl_add_site($site_path, $uri, $site_id) {
 
   // Site installation.
   $command = "$drush_path -y --uri=$uri site-install --existing-config --sites-subdir=$sites_subdir --db-url=$db_url 2>&1";
-  // Running the command twice as a hack. First time sets up the site directory but installation stops.
-  // Second runs completes it.
-  $result = shell_exec($command);
-  echo $result;
-  if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
-    throw new Exception('Error while running drush site-install.');
-  }
   $result = shell_exec($command);
   echo $result;
   if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
