@@ -26,7 +26,6 @@ chdir(dirname(__FILE__) . '/../../..');
 // Bootstrap.
 $autoloader = require 'autoload.php';
 require_once  'core/includes/bootstrap.inc';
-require_once  'core/includes/database.inc';
 $request = Request::createFromGlobals();
 Settings::initialize(dirname(dirname(__DIR__)), DrupalKernel::findSitePath($request), $autoloader);
 $kernel = DrupalKernel::createFromRequest($request, $autoloader, 'prod')->boot();
