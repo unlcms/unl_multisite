@@ -290,6 +290,10 @@ function unl_add_site($site_path, $uri, $site_id) {
   if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
     throw new Exception('Error while running drush users:list.');
   }
+  // On a new site, the admin user is uid 1. The users created below need added
+  // to the cas module table, "authmap", which is how the
+  // "Allow user to log in via CAS" setting is stored.
+  $admin_index = 2;
   foreach(unserialize($result) as $admin) {
     $name = $admin['name'];
     $mail = $admin['mail'];
@@ -305,6 +309,13 @@ function unl_add_site($site_path, $uri, $site_id) {
     if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
       throw new Exception('Error while running drush user:role:add.');
     }
+    $command = "$drush_path --uri=$uri sql-query 'INSERT INTO authmap (uid, provider, authname) VALUES ($admin_index, \"cas\", \"$name\")'";
+    $result = shell_exec($command);
+    echo $result;
+    if (stripos($result, 'Drush command terminated abnormally') !== FALSE) {
+      throw new Exception('Error while running drush sql-query to insert into authmap.');
+    }
+    $admin_index++;
   }
 }
 
