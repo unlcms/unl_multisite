@@ -19,8 +19,8 @@ define('\Drupal::root()', getcwd());
 require_once \Drupal::root() . '/includes/bootstrap.inc';
 drupal_override_server_variables();
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-require_once drupal_get_path('module', 'unl') . '/includes/common.php';
-require_once drupal_get_path('module', 'unl_multisite') . '/unl_site_creation.php';
+require_once \Drupal::service('extension.list.module')->getPath('unl') . '/includes/common.php';
+require_once \Drupal::service('extension.list.module')->getPath('unl_multisite') . '/unl_site_creation.php';
 
 $map = unl_get_site_user_map('role', 'Site Admin', TRUE);
 
