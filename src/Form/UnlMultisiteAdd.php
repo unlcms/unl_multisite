@@ -133,7 +133,7 @@ class UnlMultisiteAdd extends FormBase {
 
     $site_path_parts = explode('/', $site_path);
     $first_directory = array_shift($site_path_parts);
-    if (in_array($first_directory, array('core', 'includes', 'misc', 'modules', 'profiles', 'scripts', 'sites', 'themes', 'vendor'))) {
+    if (in_array($first_directory, array('core', 'includes', 'libraries', 'misc', 'modules', 'profiles', 'scripts', 'sites', 'themes', 'vendor'))) {
       $form_state->setErrorByName('site_path', t('Drupal site paths must not start with the @first_directory directory.', array('@first_directory' => $first_directory)));
     }
 

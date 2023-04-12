@@ -1,4 +1,4 @@
-# UNL Multisite Module for Drupal 9
+# UNL Multisite Module for Drupal 8/9/10
 
 Provides a web interface to run a [Drupal multisite](https://www.drupal.org/docs/multisite-drupal) setup so additional sites can exist in subdirectories such as http://example.unl.edu/site2.
 
@@ -48,7 +48,7 @@ $settings['config_sync_directory'] = '../config/sync';
   # Do not uncomment the previous line.
   RewriteRule .*/cron.php cron.php
   RewriteRule .*/update.php update.php
-  RewriteRule ^(.*?/(core\/assets|core\/misc|core\/modules|core\/themes|modules|sites|themes))(.*) ${drupal_unl_multisite:$1|$1}$3 [DPI]
+  RewriteRule ^(.*?/(core\/assets|core\/misc|core\/modules|core\/themes|libraries|modules|sites|themes))(.*) ${drupal_unl_multisite:$1|$1}$3 [DPI]
 
   RewriteCond ${drupal_unl_multisite://%{HTTP_HOST}%{REQUEST_URI}|NOT_FOUND} !^NOT_FOUND$
   RewriteRule (.*) ${drupal_unl_multisite://%{HTTP_HOST}%{REQUEST_URI}|$1} [R,L]
