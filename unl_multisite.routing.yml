@@ -40,3 +40,11 @@ unl_multisite.site_delete:
   requirements:
     _permission: 'unl site creation'
     site_id: ^\d+$
+    
+unl_multisite.site_mysites_list:
+  path: '/mysites'
+  defaults:
+    _controller: '\Drupal\unl_multisite\Controller\UnlMultisiteController::unl_multisite_my_sites'
+    _title: 'My Sites'
+  requirements:
+    _permission: 'authenticated'
