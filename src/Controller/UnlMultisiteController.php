@@ -113,9 +113,14 @@ class UnlMultisiteController extends ControllerBase {
         $site_info_blob_data = $database_connection->query("SELECT data from {config} where name = 'system.site'");
         $site_info_blob_data = $site_info_blob_data->fetchAll();
         $site_info_blob_data = $site_info_blob_data[0]->data;
-        $site_data_blob_unseralized = unserialize($site_info_blob_data);
 
-        $site_name = $site_data_blob_unseralized['name'];
+        if($site_info_blob_data) {
+          $site_data_blob_unseralized = unserialize($site_info_blob_data);
+          $site_name = $site_data_blob_unseralized['name'];
+          
+        } else {
+          $site_name = 'Error - site name could not be retrieved';
+        }
         $site_uri = $record->uri;
 
         $rows[] = [
