@@ -36,7 +36,7 @@ class UnlMultisiteController extends ControllerBase {
     $database_default = [];
 
     $current_loggedin_user = \Drupal::currentUser();
-    $uid = $current_loggedin_user->id();
+    $account_name = $current_loggedin_user->getAccountName();
 
     $database_default = Database::getConnection('default');
     $default_database_connection_details = $database_default->getConnectionOptions();
@@ -45,7 +45,7 @@ class UnlMultisiteController extends ControllerBase {
     $default_database_connection_driver = $default_database_connection_details['driver'];
     $default_database_connection_host = $default_database_connection_details['host'];
 
-    $site_info = $database_default->query("select site_id, uri from {unl_sites}");
+    $site_info = $database_default->query("SELECT site_id, uri FROM {unl_sites}");
     $site_info = $site_info->fetchAll();
 
     $rows = [];
@@ -64,7 +64,11 @@ class UnlMultisiteController extends ControllerBase {
 
       Database::addConnectionInfo($sub_site_database, 'default', $subsite_database_connection);
       $database_connection = Database::getConnection('default', $sub_site_database);
-      $subsite_user_roles = $database_connection->query("select roles_target_id from {user__roles} where [entity_id] = :entity_id", [':entity_id' => $uid]);
+      
+      $uid = $database_connection->query("SELECT uid FROM {users_field_data} WHERE [name] = :name", [':name' => $account_name]);
+      $uid = $uid->fetchAll()[0]->uid;
+
+      $subsite_user_roles = $database_connection->query("SELECT roles_target_id FROM {user__roles} WHERE [entity_id] = :entity_id", [':entity_id' => $uid]);
       $subsite_user_roles = $subsite_user_roles->fetchAll();
 
       if ($subsite_user_roles) {
@@ -110,14 +114,14 @@ class UnlMultisiteController extends ControllerBase {
 
         $database_connection = Database::getConnection('default', $sub_site_database);
 
-        $site_info_blob_data = $database_connection->query("SELECT data from {config} where name = 'system.site'");
+        $site_info_blob_data = $database_connection->query("SELECT data FROM {config} WHERE name = 'system.site'");
         $site_info_blob_data = $site_info_blob_data->fetchAll();
         $site_info_blob_data = $site_info_blob_data[0]->data;
 
         if($site_info_blob_data) {
           $site_data_blob_unseralized = unserialize($site_info_blob_data);
           $site_name = $site_data_blob_unseralized['name'];
-          
+
         } else {
           $site_name = 'Error - site name could not be retrieved';
         }
