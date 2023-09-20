@@ -67,7 +67,7 @@ class UnlMultisiteController extends ControllerBase {
       
       $uid = $database_connection->query("SELECT uid FROM {users_field_data} WHERE [name] = :name", [':name' => $account_name]);
       $uid = $uid->fetchAll()[0]->uid;
-
+      
       $subsite_user_roles = $database_connection->query("SELECT roles_target_id FROM {user__roles} WHERE [entity_id] = :entity_id", [':entity_id' => $uid]);
       $subsite_user_roles = $subsite_user_roles->fetchAll();
 
