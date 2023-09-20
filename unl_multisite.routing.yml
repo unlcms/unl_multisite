@@ -47,4 +47,6 @@ unl_multisite.site_mysites_list:
     _controller: '\Drupal\unl_multisite\Controller\UnlMultisiteController::unl_multisite_my_sites'
     _title: 'My Sites'
   requirements:
-    _permission: 'authenticated'
+    _role: 'authenticated'
+  options:
+    no_cache: TRUE
