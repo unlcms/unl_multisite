@@ -45,7 +45,7 @@ class UnlMultisiteController extends ControllerBase {
     $default_database_connection_driver = $default_database_connection_details['driver'];
     $default_database_connection_host = $default_database_connection_details['host'];
 
-    $site_info = $database_default->query("SELECT site_id, uri FROM {unl_sites}");
+    $site_info = $database_default->query("SELECT site_id, uri FROM {unl_sites} WHERE installed = 2");
     $site_info = $site_info->fetchAll();
 
     $rows = [];
