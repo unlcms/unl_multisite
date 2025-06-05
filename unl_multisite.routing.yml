@@ -59,3 +59,11 @@ unl_multisite.site_mysites_list:
     _role: 'authenticated'
   options:
     no_cache: TRUE
+
+unl_multisite.ttp_report:
+  path: '/admin/sites/unl/ttp-report'
+  defaults:
+    _controller: '\Drupal\unl_multisite\Controller\TtpReportController::report'
+    _title: 'Temp transition page report'
+  requirements:
+    _role: 'administrator + super_administrator'
