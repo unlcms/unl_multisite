@@ -24,13 +24,13 @@ class MultisiteCron {
   }
 
   public function run($manual = FALSE) {
-    $batch_size = $manual ? 100 : 50; // Larger batch for manual refresh
+    $batch_size = $manual ? 200 : 100; // Larger batch for manual refresh
     $processed = 0;
 
     $cached = $this->cache->get('unl_multisite.data');
     $data = $cached && is_array($cached->data) ? $cached->data : [];
 
-    $offset = $manual ? 0 : ($data['last_offset'] ?? 0);
+    $offset = $data['last_offset'] ?? 0;
 
     $query = $this->db->select('unl_sites', 's')
       ->fields('s', ['site_id', 'site_path', 'installed'])
@@ -40,6 +40,11 @@ class MultisiteCron {
 
     if (empty($sites)) {
       $offset = 0;
+      $query = $this->db->select('unl_sites', 's')
+        ->fields('s', ['site_id', 'site_path', 'installed'])
+        ->condition('installed', 2)
+        ->range($offset, $batch_size);
+      $sites = $query->execute()->fetchAllAssoc('site_id');
     }
 
     foreach ($sites as $site_id => $site) {
@@ -95,7 +100,7 @@ class MultisiteCron {
       }
     }
 
-    $data['last_offset'] = $manual ? 0 : $offset + $batch_size;
+    $data['last_offset'] = $offset + $batch_size;
     $this->cache->set('unl_multisite.data', $data);
 
     return $processed;
