@@ -1,0 +1,9 @@
+services:
+  logger.channel.unl_multisite:
+    parent: logger.channel_base
+    arguments: ['unl_multisite']
+  unl_multisite.cron:
+    class: Drupal\unl_multisite\Cron\MultisiteCron
+    arguments: ['@database', '@cache.default', '@logger.channel.unl_multisite']
+    tags:
+      - { name: cron }

@@ -67,3 +67,11 @@ unl_multisite.ttp_report:
     _title: 'Temp transition page report'
   requirements:
     _role: 'administrator + super_administrator'
+
+unl_multisite.customization_report:
+  path: '/admin/sites/unl/customization-report'
+  defaults:
+    _controller: '\Drupal\unl_multisite\Controller\CustomizationReportController::report'
+    _title: 'UNL Customization Report'
+  requirements:
+    _role: 'administrator + super_administrator'

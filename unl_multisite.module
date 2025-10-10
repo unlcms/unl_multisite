@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+
 /**
  * Implements hook_block_info()
  */
@@ -47,14 +49,14 @@ function unl_multisite_block_view_my_sites() {
 /**
  * Implements hook_help().
  */
-function unl_multisite_help($path, $arg) {
-  switch ($path) {
-    case 'admin/sites/unl/aliases':
-    case 'admin/sites/unl/%/aliases':
-      return '<p>Be careful when deleting aliases. While long, ugly paths may not appear to be needed they may still be in use -  for instance in a ProxyPass setup on another server.</p>';
+function unl_multisite_help($route_name, \Drupal\Core\Routing\RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'unl_multisite.site_aliases':
+      return t('Be careful when deleting aliases. While long, ugly paths may not appear to be needed they may still be in use -  for instance in a ProxyPass setup on another server.');
+    case 'help.page.unl_multisite':
+      return t('Provides an overview of multisite customizations from all site databases.');
   }
 }
-
 
 /**
  * Implements hook_element_info_alter().
