@@ -99,6 +99,10 @@ class UnlMultisiteController extends ControllerBase {
               $role = 'Administrator';
               break;
 
+            case 'temporary_development_contributor':
+              $role = 'Temporary Development Contributor';
+              break;
+
             default:
               $role = 'Error - Undefined Role';
               break;

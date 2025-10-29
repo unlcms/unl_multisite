@@ -257,11 +257,15 @@ class UnlMultisiteList extends FormBase {
         $unl_settings_blob_data = $unl_settings_blob_data[0]->data;
         if ($unl_settings_blob_data) {
           $unl_settings_data_blob_unseralized = unserialize($unl_settings_blob_data);
-          $primary_base_url = $unl_settings_data_blob_unseralized['primary_base_url'];
-        } else {
+          if(isset($unl_settings_data_blob_unseralized['primary_base_url'])) {
+            $primary_base_url = $unl_settings_data_blob_unseralized['primary_base_url'];
+          }
+        } 
+        else {
           $primary_base_url = 'Error - primary base url could not be retrieved';
         }
-      } else {
+      } 
+      else {
         $primary_base_url = 'Not set';
       }
       // Retrieve the last accessed date by a Site Admin.
