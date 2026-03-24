@@ -77,11 +77,11 @@ unl_multisite.customization_report:
     _role: 'administrator + super_administrator'
 
 unl_multisite.json_feed:
-  path: '/admin/sites/unl/json-feed'
+  path: '/admin/sites/unl/feed'
   defaults:
     _controller: '\Drupal\unl_multisite\Controller\UnlMultisiteController:unl_multisite_all_sites_json'
     _title: 'JSON Feed of Sites'
   requirements:
-    _role: 'administrator + super_administrator'
+    _access: 'TRUE'
   options:
     no_cache: TRUE
