@@ -202,7 +202,7 @@ class UnlMultisiteController extends ControllerBase {
       // Default to record URI if no settings exist or data is invalid
       $site_uri = $record->uri;
       $unl_settings_blob_data = $database_connection->query("SELECT data FROM {config} WHERE name = 'unl_system.settings'")->fetchAll();
-      if (!empty($unl_settings_blob_data) && !empty($unl_settings_blob_data[0]->data)) {
+      if (!empty($unl_settings_blob_data) && !empty($unl_settings_blob_data[0]->data) && !empty($settings['primary_base_url'])) {
         $settings = unserialize($unl_settings_blob_data[0]->data);
         if ($settings !== false && isset($settings['primary_base_url'])) {
           $site_uri = $settings['primary_base_url'];
