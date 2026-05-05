@@ -10,7 +10,7 @@
     }
   ],
   "require": {
-    "drupal/core": "^10",
+    "drupal/core": "^10 || ^11",
     "richardbporter/drush-users-commands": "^4.0.0"
   }
 }
